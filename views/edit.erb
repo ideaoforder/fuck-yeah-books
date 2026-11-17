@@ -1,0 +1,6 @@
+<h1>Edit <%= h @book.display_title %></h1>
+<form class="card" method="post" action="/books/<%= @book.id %>">
+  <input type="hidden" name="_method" value="patch">
+  <%= erb :form, layout: false %>
+  <button>Save</button> <a href="/books/<%= @book.id %>">Cancel</a>
+</form>

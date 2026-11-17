@@ -1,0 +1,21 @@
+<h1>Add a book</h1>
+
+<form class="card" method="post" action="/books/isbn">
+  <h2>By ISBN</h2>
+  <p class="muted">Type it or scan it. Details come from Open Library (Google Books as a fallback). For a stack of books, use <a href="/scan">Scan</a>.</p>
+  <div class="row">
+    <input name="isbn" placeholder="ISBN-10 or ISBN-13" autofocus inputmode="numeric">
+    <select name="status">
+      <% Shelf::Book::STATUSES.each do |k, v| %><option value="<%= k %>"><%= v %></option><% end %>
+    </select>
+    <label class="check"><input type="checkbox" name="owned" value="1" checked> Owned</label>
+    <button>Look up &amp; add</button>
+  </div>
+</form>
+
+<form class="card" method="post" action="/books">
+  <h2>Manually</h2>
+  <%= erb :form, layout: false %>
+  <label class="check"><input type="checkbox" name="lookup" value="1" checked> Fill blanks from Open Library if there's an ISBN</label>
+  <button>Save</button>
+</form>

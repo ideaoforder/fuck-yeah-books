@@ -1,0 +1,220 @@
+{
+  "$schema": "https://shelf.local/schema/booklog-1.0.schema.json",
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Example",
+  "booklogVersion": "1.0",
+  "dateCreated": "2026-11-17T17:05:38Z",
+  "numberOfItems": 5,
+  "itemListElement": [
+    {
+      "@type": "Book",
+      "name": "Dune",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Frank Herbert"
+        }
+      ],
+      "isbn": "9780441013593",
+      "bookFormat": "https://schema.org/Paperback",
+      "numberOfPages": 688,
+      "publisher": "Ace",
+      "datePublished": "2005",
+      "sameAs": [
+        "https://www.goodreads.com/book/show/234225"
+      ],
+      "aggregateRating": [
+        {
+          "@type": "AggregateRating",
+          "ratingValue": 4.27,
+          "bestRating": 5,
+          "author": {
+            "@type": "Organization",
+            "name": "Goodreads"
+          }
+        }
+      ],
+      "review": {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": 5.0,
+          "bestRating": 5,
+          "worstRating": 0
+        },
+        "reviewBody": "Spice.\n\nWorms & politics.",
+        "dateCreated": "2021-03-14"
+      },
+      "keywords": "sci-fi, favorites",
+      "readingStatus": "read",
+      "owned": true,
+      "dateAdded": "2020-12-01",
+      "reads": [
+        {
+          "endTime": "2021-03-14"
+        },
+        {
+          "startTime": "2024-05-20",
+          "endTime": "2024-06-02"
+        }
+      ]
+    },
+    {
+      "@type": "Book",
+      "name": "Good Omens",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Terry Pratchett"
+        },
+        {
+          "@type": "Person",
+          "name": "Neil Gaiman"
+        }
+      ],
+      "bookFormat": "https://schema.org/EBook",
+      "numberOfPages": 412,
+      "publisher": "William Morrow",
+      "datePublished": "2006",
+      "sameAs": [
+        "https://www.goodreads.com/book/show/12067"
+      ],
+      "aggregateRating": [
+        {
+          "@type": "AggregateRating",
+          "ratingValue": 4.25,
+          "bestRating": 5,
+          "author": {
+            "@type": "Organization",
+            "name": "Goodreads"
+          }
+        }
+      ],
+      "review": {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": 4.0,
+          "bestRating": 5,
+          "worstRating": 0
+        },
+        "dateCreated": "2019-05-02"
+      },
+      "readingStatus": "read",
+      "owned": false,
+      "dateAdded": "2019-05-02",
+      "reads": [
+        {
+        }
+      ]
+    },
+    {
+      "@type": "Book",
+      "name": "Catching Fire",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Suzanne Collins"
+        }
+      ],
+      "isbn": "9780439023498",
+      "bookFormat": "https://schema.org/Hardcover",
+      "numberOfPages": 391,
+      "publisher": "Scholastic",
+      "datePublished": "2009",
+      "sameAs": [
+        "https://www.goodreads.com/book/show/6148028"
+      ],
+      "aggregateRating": [
+        {
+          "@type": "AggregateRating",
+          "ratingValue": 4.34,
+          "bestRating": 5,
+          "author": {
+            "@type": "Organization",
+            "name": "Goodreads"
+          }
+        }
+      ],
+      "readingStatus": "want",
+      "owned": false,
+      "dateAdded": "2022-01-10"
+    },
+    {
+      "@type": "Book",
+      "name": "Piranesi",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Susanna Clarke"
+        }
+      ],
+      "isbn": "9781635575637",
+      "bookFormat": "https://schema.org/Hardcover",
+      "sameAs": [
+        "https://openlibrary.org/works/OL20644519W"
+      ],
+      "aggregateRating": [
+        {
+          "@type": "AggregateRating",
+          "ratingValue": 4.31,
+          "bestRating": 5,
+          "ratingCount": 520,
+          "author": {
+            "@type": "Organization",
+            "name": "Open Library"
+          }
+        }
+      ],
+      "review": {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": 4.5,
+          "bestRating": 5,
+          "worstRating": 0
+        },
+        "reviewBody": "A house of tides.",
+        "dateCreated": "2023-02-19"
+      },
+      "keywords": "fantasy, short",
+      "readingStatus": "read",
+      "owned": true,
+      "dateAdded": "2023-02-01",
+      "reads": [
+        {
+          "startTime": "2023-02-10",
+          "endTime": "2023-02-19"
+        }
+      ],
+      "borrows": [
+        {
+          "borrower": "Sam",
+          "startTime": "2024-01-02"
+        }
+      ]
+    },
+    {
+      "@type": "Book",
+      "name": "The Book of the New Sun",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Gene Wolfe"
+        }
+      ],
+      "bookFormat": "https://schema.org/EBook",
+      "identifier": [
+        {
+          "@type": "PropertyValue",
+          "propertyID": "storygraph",
+          "value": "a1b2c3d4-uid"
+        }
+      ],
+      "readingStatus": "dnf",
+      "owned": false,
+      "dateAdded": "2024-09-09"
+    }
+  ]
+}

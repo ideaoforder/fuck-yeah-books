@@ -1,0 +1,26 @@
+<h1>You vs. the crowd</h1>
+<% if @books.empty? %>
+  <p class="empty">Nothing to compare yet. Goodreads averages come in with a Goodreads import. Open Library averages come from <a href="/import">fetching metadata</a>.</p>
+<% else %>
+  <% diffs = @books.map { _1.rating - _1.community_rating } %>
+  <div class="ratings big">
+    <div><strong><%= format("%+.2f", diffs.sum / diffs.size) %></strong><span>Average difference from the crowd</span></div>
+    <div><strong><%= diffs.count(&:positive?) %></strong><span>Rated higher</span></div>
+    <div><strong><%= diffs.count(&:negative?) %></strong><span>Rated lower</span></div>
+    <div><strong><%= @books.size %></strong><span>Books compared</span></div>
+  </div>
+  <p class="muted">Sorted by how far you are from the crowd. Uses the Goodreads average where it exists, otherwise Open Library's.
+    <% if @unrated_community > 0 %><%= @unrated_community %> rated books have no community rating yet.<% end %></p>
+  <table class="books">
+    <tr><th></th><th>Book</th><th class="num">You</th><th class="num">Goodreads</th><th class="num">Open Library</th></tr>
+    <% @books.each do |b| %>
+      <tr>
+        <td class="c"><%= cover(b, "S", "thumb") %></td>
+        <td><a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a><div class="muted"><%= h b.author_list.first %></div></td>
+        <td class="num"><%= stars(b.rating) %></td>
+        <td class="num"><%= b.gr_avg_rating ? format("%.2f", b.gr_avg_rating) : "—" %> <%= delta(b.rating, b.gr_avg_rating) %></td>
+        <td class="num"><%= b.ol_avg_rating ? format("%.2f", b.ol_avg_rating) : "—" %> <%= delta(b.rating, b.ol_avg_rating) %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

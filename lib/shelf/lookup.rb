@@ -1,0 +1,108 @@
+require "net/http"
+require "json"
+require "uri"
+
+module Shelf
+  # Metadata lookups. Open Library first (open data, has community ratings),
+  # Google Books as a fallback. No API keys needed for either.
+  module Lookup
+    USER_AGENT = "Shelf/1.0 (personal book tracker)".freeze
+
+    FORMAT_MAP = {
+      /hard/i => "hardcover", /paper|mass market/i => "paperback",
+      /e-?book|kindle|digital|epub/i => "ebook", /audio|cd/i => "audiobook"
+    }.freeze
+
+    class << self
+      # Swappable for tests: ->(url) { parsed_json_or_nil }
+      attr_writer :http
+
+      def http
+        @http ||= method(:get_json)
+      end
+
+      # => Hash of Book column values, or nil.
+      def by_isbn(isbn13)
+        open_library(isbn13) || google_books(isbn13)
+      end
+
+      def open_library(isbn)
+        data = http.call("https://openlibrary.org/api/books?bibkeys=ISBN:#{isbn}&format=json&jscmd=data")
+        rec = data && data["ISBN:#{isbn}"] or return nil
+        edition = http.call("https://openlibrary.org/isbn/#{isbn}.json") || {}
+        ids = rec["identifiers"] || {}
+        {
+          title: rec["title"],
+          subtitle: rec["subtitle"],
+          authors: Array(rec["authors"]).map { _1["name"] }.join("; ").then { _1.empty? ? nil : _1 },
+          publisher: Array(rec["publishers"]).first&.dig("name"),
+          published_year: rec["publish_date"].to_s[/\d{4}/]&.to_i,
+          pages: rec["number_of_pages"],
+          cover_url: rec.dig("cover", "medium"),
+          openlibrary_id: rec["key"].to_s.split("/").last,
+          openlibrary_work: Array(edition["works"]).first&.dig("key").to_s.split("/").last,
+          goodreads_id: Array(ids["goodreads"]).first,
+          isbn10: Array(ids["isbn_10"]).first,
+          format: map_format(edition["physical_format"])
+        }.reject { |_, v| v.nil? || v == "" }
+      end
+
+      def google_books(isbn)
+        data = http.call("https://www.googleapis.com/books/v1/volumes?q=isbn:#{isbn}")
+        info = data && Array(data["items"]).first&.dig("volumeInfo") or return nil
+        {
+          title: info["title"],
+          subtitle: info["subtitle"],
+          authors: Array(info["authors"]).join("; ").then { _1.empty? ? nil : _1 },
+          publisher: info["publisher"],
+          published_year: info["publishedDate"].to_s[/\d{4}/]&.to_i,
+          pages: info["pageCount"],
+          cover_url: info.dig("imageLinks", "thumbnail")&.sub("http://", "https://")
+        }.reject { |_, v| v.nil? || v == "" }
+      end
+
+      # For books without an ISBN (Kindle editions from Goodreads, etc.):
+      # finds the Open Library work, which carries community ratings.
+      def search(title, author)
+        q = URI.encode_www_form(title: title, author: author.to_s, limit: 1,
+                                fields: "key,ratings_average,ratings_count,cover_i")
+        doc = http.call("https://openlibrary.org/search.json?#{q}")&.dig("docs", 0) or return nil
+        {
+          openlibrary_work: doc["key"].to_s.split("/").last,
+          ol_avg_rating: doc["ratings_average"]&.round(2),
+          ol_rating_count: doc["ratings_count"],
+          cover_url: doc["cover_i"] && "https://covers.openlibrary.org/b/id/#{doc['cover_i']}-M.jpg"
+        }.compact
+      end
+
+      def ratings(work_id)
+        s = http.call("https://openlibrary.org/works/#{work_id}/ratings.json")&.dig("summary") or return nil
+        return nil unless s["average"]
+        { ol_avg_rating: s["average"].round(2), ol_rating_count: s["count"] }
+      end
+
+      def map_format(str)
+        return nil if str.to_s.empty?
+        FORMAT_MAP.find { |re, _| str.match?(re) }&.last || "other"
+      end
+
+      private
+
+      def get_json(url, redirects = 3)
+        uri = URI(url)
+        res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https",
+                              open_timeout: 4, read_timeout: 6) do |h|
+          h.get(uri.request_uri, "User-Agent" => USER_AGENT, "Accept" => "application/json")
+        end
+        case res
+        when Net::HTTPSuccess then JSON.parse(res.body)
+        when Net::HTTPRedirection
+          redirects.positive? ? get_json(URI.join(url, res["location"]).to_s, redirects - 1) : nil
+        end
+      rescue StandardError => e
+        warn "[lookup] #{url}: #{e.class}: #{e.message}"
+        nil
+      end
+    end
+  end
+end

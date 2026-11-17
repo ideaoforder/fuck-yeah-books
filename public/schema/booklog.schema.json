@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shelf.local/schema/booklog-1.0.schema.json",
+  "title": "Booklog 1.0",
+  "description": "A portable reading log. Every document is also valid schema.org JSON-LD: books, reviews and ratings use schema.org's Book, Review, Rating and AggregateRating types. Personal reading data that schema.org has no property for (readingStatus, reads, borrows, owned, dateAdded, privateNotes) are extension keys, which JSON-LD processors ignore. A document is one of: an ItemList of Books, a single Book, a single Review (with itemReviewed), or an array of Books or Reviews.",
+  "oneOf": [
+    { "$ref": "#/$defs/BookList" },
+    { "$ref": "#/$defs/Book" },
+    { "$ref": "#/$defs/StandaloneReview" },
+    { "type": "array", "items": { "anyOf": [{ "$ref": "#/$defs/Book" }, { "$ref": "#/$defs/StandaloneReview" }] } }
+  ],
+  "$defs": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}" },
+
+    "BookList": {
+      "type": "object",
+      "required": ["@type", "itemListElement"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "@context": { "const": "https://schema.org" },
+        "@type": { "const": "ItemList" },
+        "name": { "type": "string" },
+        "booklogVersion": { "type": "string", "pattern": "^1\\." },
+        "dateCreated": { "type": "string" },
+        "numberOfItems": { "type": "integer", "minimum": 0 },
+        "itemListElement": { "type": "array", "items": { "$ref": "#/$defs/Book" } }
+      }
+    },
+
+    "Person": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object", "required": ["name"],
+          "properties": { "@type": { "const": "Person" }, "name": { "type": "string", "minLength": 1 } }
+        }
+      ]
+    },
+
+    "Rating": {
+      "type": "object",
+      "required": ["ratingValue"],
+      "description": "Readers should rescale to their own range using bestRating and worstRating, which default to 5 and 0. Booklog writers use a 0–5 scale in quarter steps. A missing reviewRating means unrated: 0 is not a rating.",
+      "properties": {
+        "@type": { "const": "Rating" },
+        "ratingValue": { "type": "number", "exclusiveMinimum": 0 },
+        "bestRating": { "type": "number", "default": 5 },
+        "worstRating": { "type": "number", "default": 0 }
+      }
+    },
+
+    "AggregateRating": {
+      "type": "object",
+      "required": ["ratingValue"],
+      "description": "A community average. author.name names the source, e.g. 'Goodreads' or 'Open Library'.",
+      "properties": {
+        "@type": { "const": "AggregateRating" },
+        "ratingValue": { "type": "number" },
+        "bestRating": { "type": "number" },
+        "ratingCount": { "type": "integer" },
+        "author": { "type": "object", "properties": { "@type": { "type": "string" }, "name": { "type": "string" } } }
+      }
+    },
+
+    "Review": {
+      "type": "object",
+      "description": "Your rating and/or written review. At least one of reviewRating or reviewBody.",
+      "anyOf": [{ "required": ["reviewRating"] }, { "required": ["reviewBody"] }],
+      "properties": {
+        "@type": { "const": "Review" },
+        "reviewRating": { "$ref": "#/$defs/Rating" },
+        "reviewBody": { "type": "string" },
+        "dateCreated": { "$ref": "#/$defs/date" },
+        "author": { "$ref": "#/$defs/Person" }
+      }
+    },
+
+    "StandaloneReview": {
+      "description": "The canonical schema.org shape for sharing one review on its own.",
+      "allOf": [
+        { "$ref": "#/$defs/Review" },
+        {
+          "type": "object",
+          "required": ["@type", "itemReviewed"],
+          "properties": {
+            "@context": { "const": "https://schema.org" },
+            "@type": { "const": "Review" },
+            "itemReviewed": { "$ref": "#/$defs/Book" }
+          }
+        }
+      ]
+    },
+
+    "Book": {
+      "type": "object",
+      "description": "A book. Identify it with name plus author, or with isbn. isbn alone is enough when it's present.",
+      "anyOf": [{ "required": ["name"] }, { "required": ["isbn"] }],
+      "properties": {
+        "@type": { "const": "Book" },
+        "name": { "type": "string" },
+        "alternativeHeadline": { "type": "string", "description": "Subtitle" },
+        "author": { "type": "array", "items": { "$ref": "#/$defs/Person" } },
+        "isbn": { "type": "string", "pattern": "^(97[89]\\d{10}|\\d{9}[\\dX])$", "description": "ISBN-13 preferred, digits only" },
+        "bookFormat": {
+          "type": "string",
+          "enum": ["https://schema.org/Hardcover", "https://schema.org/Paperback", "https://schema.org/EBook",
+                   "https://schema.org/AudiobookFormat", "https://schema.org/GraphicNovel"]
+        },
+        "numberOfPages": { "type": "integer" },
+        "publisher": { "oneOf": [{ "type": "string" }, { "type": "object", "properties": { "name": { "type": "string" } } }] },
+        "datePublished": { "type": "string" },
+        "image": { "type": "string", "format": "uri" },
+        "sameAs": { "type": "array", "items": { "type": "string", "format": "uri" }, "description": "Canonical pages: Open Library edition/work, Goodreads, etc." },
+        "identifier": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["propertyID", "value"],
+            "properties": { "@type": { "const": "PropertyValue" }, "propertyID": { "type": "string" }, "value": { "type": "string" } }
+          }
+        },
+        "keywords": { "type": "string", "description": "Comma-separated tags/shelves" },
+        "aggregateRating": { "type": "array", "items": { "$ref": "#/$defs/AggregateRating" } },
+        "review": { "$ref": "#/$defs/Review" },
+
+        "readingStatus": { "enum": ["want", "reading", "read", "dnf"], "description": "Extension" },
+        "owned": { "type": "boolean", "description": "Extension" },
+        "dateAdded": { "$ref": "#/$defs/date", "description": "Extension" },
+        "privateNotes": { "type": "string", "description": "Extension" },
+        "reads": {
+          "description": "Extension. Each time you read it, shaped like schema.org ReadAction.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "startTime": { "$ref": "#/$defs/date" }, "endTime": { "$ref": "#/$defs/date" } }
+          }
+        },
+        "borrows": {
+          "description": "Extension. Copies you lent out, shaped like schema.org LendAction.",
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["borrower", "startTime"],
+            "properties": {
+              "borrower": { "type": "string" },
+              "startTime": { "$ref": "#/$defs/date" },
+              "endTime": { "$ref": "#/$defs/date" },
+              "notes": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

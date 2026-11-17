@@ -1,0 +1,37 @@
+<form class="toolbar" method="get" action="/">
+  <div class="tabs">
+    <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort')) %>" class="<%= 'on' unless @status %>">All <small><%= @counts['all'] %></small></a>
+    <% Shelf::Book::STATUSES.each do |key, label| %>
+      <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort').merge('status' => key)) %>" class="<%= 'on' if @status == key %>"><%= label %> <small><%= @counts[key].to_i %></small></a>
+    <% end %>
+  </div>
+  <input type="hidden" name="status" value="<%= h @status %>">
+  <input type="search" name="q" value="<%= h params['q'] %>" placeholder="Search title, author, tag, ISBN">
+  <select name="sort" onchange="this.form.submit()">
+    <% { "added" => "Recently added", "read" => "Recently read", "title" => "Title", "author" => "Author", "rating" => "My rating" }.each do |k, v| %>
+      <option value="<%= k %>" <%= 'selected' if @sort == k %>><%= v %></option>
+    <% end %>
+  </select>
+</form>
+
+<% if @books.empty? %>
+  <p class="empty">No books yet. <a href="/scan">Scan some</a>, <a href="/books/new">add one</a>, or <a href="/import">import your Goodreads / StoryGraph library</a>.</p>
+<% else %>
+  <table class="books">
+    <% @books.each do |b| %>
+      <tr>
+        <td class="c"><a href="/books/<%= b.id %>"><%= cover(b, "S", "thumb") %></a></td>
+        <td>
+          <a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a>
+          <div class="muted"><%= h b.author_list.join(", ") %></div>
+        </td>
+        <td class="muted"><%= h b.format %></td>
+        <td><span class="pill <%= b.status %>"><%= Shelf::Book::STATUSES[b.status] %></span>
+          <% if (l = b.current_borrow) %><span class="pill lent">lent to <%= h l.borrowed_by %></span><% end %>
+        </td>
+        <td class="num"><%= stars(b.rating) %></td>
+        <td class="muted num"><%= b[:last_read] ? fmt_date(Date.parse(b[:last_read].to_s)) : "" %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

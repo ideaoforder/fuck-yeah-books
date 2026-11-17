@@ -1,0 +1,5 @@
+/db/*.sqlite3*
+/vendor/bundle
+/.bundle
+*.log
+.DS_Store

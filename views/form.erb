@@ -1,0 +1,36 @@
+<% if @book.errors.any? %>
+  <p class="error"><%= h @book.errors.full_messages.join("; ") %></p>
+<% end %>
+<div class="grid">
+  <label>Title <input name="book[title]" value="<%= h @book.title %>"></label>
+  <label>Subtitle <input name="book[subtitle]" value="<%= h @book.subtitle %>"></label>
+  <label>Author(s) <input name="book[authors]" value="<%= h @book.authors %>" placeholder="Separate with ;"></label>
+  <label>ISBN <input name="book[isbn13]" value="<%= h @book.isbn13 %>" inputmode="numeric"></label>
+  <label>Format
+    <select name="book[format]">
+      <option value=""></option>
+      <% Shelf::Book::FORMATS.each do |f| %><option <%= 'selected' if @book.format == f %>><%= f %></option><% end %>
+    </select>
+  </label>
+  <label>Status
+    <select name="book[status]">
+      <% Shelf::Book::STATUSES.each do |k, v| %><option value="<%= k %>" <%= 'selected' if @book.status == k %>><%= v %></option><% end %>
+    </select>
+  </label>
+  <label>Publisher <input name="book[publisher]" value="<%= h @book.publisher %>"></label>
+  <label>Year <input name="book[published_year]" value="<%= h @book.published_year %>" inputmode="numeric"></label>
+  <label>Pages <input name="book[pages]" value="<%= h @book.pages %>" inputmode="numeric"></label>
+  <label>Cover URL <input name="book[cover_url]" value="<%= h @book.cover_url %>"></label>
+  <label>Tags <input name="book[tags]" value="<%= h @book.tags %>" placeholder="comma, separated"></label>
+  <label class="check"><input type="checkbox" name="book[owned]" value="1" <%= 'checked' if @book.owned %>> I own this</label>
+</div>
+
+<fieldset>
+  <legend>Rating &amp; review</legend>
+  <div class="grid">
+    <label>Rating (0.25–5) <input type="number" name="book[rating]" value="<%= h @book.rating %>" min="0.25" max="5" step="0.25"></label>
+    <label>Reviewed on <input type="date" name="book[reviewed_on]" value="<%= @book.reviewed_on&.iso8601 %>"></label>
+  </div>
+  <label>Review <textarea name="book[review]" rows="8"><%= h @book.review %></textarea></label>
+  <label>Private notes <textarea name="book[notes]" rows="3"><%= h @book.notes %></textarea></label>
+</fieldset>

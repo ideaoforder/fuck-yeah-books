@@ -1,0 +1,23 @@
+<h1>Scan</h1>
+<p class="muted">Point the scanner at the barcode on the back cover. It types the ISBN and hits Enter, and the book is added. Keep going.</p>
+
+<form id="scan-form" class="card scanbox">
+  <input id="code" name="code" autocomplete="off" autofocus placeholder="Waiting for scan…" inputmode="numeric">
+  <div class="row">
+    <label>Add as
+      <select id="status">
+        <% Shelf::Book::STATUSES.each do |k, v| %><option value="<%= k %>" <%= 'selected' if k == 'want' %>><%= v %></option><% end %>
+      </select>
+    </label>
+    <label>Format
+      <select id="format"><option value="">(from lookup)</option>
+        <% Shelf::Book::FORMATS.each do |f| %><option><%= f %></option><% end %>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="owned" checked> Owned</label>
+  </div>
+</form>
+
+<ul id="results" class="scans"></ul>
+
+<script src="/scan.js"></script>

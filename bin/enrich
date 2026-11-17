@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+# Backfill covers, metadata and Open Library community ratings.
+#   bin/enrich          # books never looked up
+#   bin/enrich --all    # every book (refreshes community ratings)
+require_relative "../app"
+
+scope = ARGV.include?("--all") ? Shelf::Book.dataset : Shelf::Book.where(looked_up_at: nil)
+ids = scope.select_map(:id)
+puts "Enriching #{ids.size} books…"
+ids.each_with_index do |id, i|
+  book = Shelf::Book[id]
+  ok = book.enrich!
+  puts format("%4d/%d %s %s", i + 1, ids.size, ok ? "✓" : "·", book.display_title)
+  sleep 0.5
+end

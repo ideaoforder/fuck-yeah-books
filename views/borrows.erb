@@ -1,0 +1,29 @@
+<h1>Lent out</h1>
+<% if @out.empty? %>
+  <p class="empty">Everything's home.</p>
+<% else %>
+  <table class="books">
+    <% @out.each do |l| %>
+      <tr>
+        <td class="c"><a href="/books/<%= l.book_id %>"><%= cover(l.book, "S", "thumb") %></a></td>
+        <td><a class="title" href="/books/<%= l.book_id %>"><%= h l.book.display_title %></a></td>
+        <td><strong><%= h l.borrowed_by %></strong></td>
+        <td class="muted"><%= fmt_date(l.borrowed_on) %> · <%= l.days_out %> days</td>
+        <td><form method="post" action="/borrows/<%= l.id %>/return"><button class="small">Returned</button></form></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<% if @history.any? %>
+  <h2>Returned</h2>
+  <table class="books">
+    <% @history.each do |l| %>
+      <tr>
+        <td><a href="/books/<%= l.book_id %>"><%= h l.book.display_title %></a></td>
+        <td><%= h l.borrowed_by %></td>
+        <td class="muted"><%= fmt_date(l.borrowed_on) %> → <%= fmt_date(l.returned_on) %> (<%= l.days_out %> days)</td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

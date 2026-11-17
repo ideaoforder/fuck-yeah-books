@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shelf</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">📚 Shelf</a>
+    <nav>
+      <a href="/">Library</a>
+      <a href="/scan">Scan</a>
+      <a href="/books/new">Add</a>
+      <a href="/borrows">Lent out</a>
+      <a href="/compare">Compare</a>
+      <a href="/import">Import / Export</a>
+    </nav>
+  </header>
+  <main>
+    <%= flash_msg %>
+    <%= yield %>
+  </main>
+</body>
+</html>

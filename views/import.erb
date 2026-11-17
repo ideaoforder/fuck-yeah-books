@@ -1,0 +1,33 @@
+<h1>Import / Export</h1>
+
+<section class="two">
+  <form class="card" method="post" action="/import" enctype="multipart/form-data">
+    <h2>Import</h2>
+    <p>Upload any of these. The format is detected automatically, and re-importing is safe because books are matched by ISBN, or by title and author.</p>
+    <ul>
+      <li><strong>Goodreads</strong>: My Books → Import and export → Export Library (CSV)</li>
+      <li><strong>StoryGraph</strong>: Manage Account → Export StoryGraph Library (CSV)</li>
+      <li><strong>Booklog JSON</strong>: this app's own export, or any schema.org Review/Book JSON</li>
+    </ul>
+    <input type="file" name="file" accept=".csv,.json,text/csv,application/json" required>
+    <button>Import</button>
+  </form>
+
+  <div class="card">
+    <h2>Export</h2>
+    <p><a class="button" href="/export.json">Booklog JSON</a> Lossless. Includes reads, loans, quarter-star ratings and community ratings. Valid <a href="https://schema.org/Book">schema.org</a> JSON-LD. <a href="/schema/booklog.schema.json">Schema</a>.</p>
+    <p><a class="button" href="/export.csv">Goodreads CSV</a> The format everything else imports, including StoryGraph, BookWyrm and Goodreads. Ratings are rounded to whole stars, and only your last read date is kept.</p>
+  </div>
+</section>
+
+<div class="card">
+  <h2>Metadata &amp; community ratings</h2>
+  <% if @enrich[:running] %>
+    <p>Fetching… <%= @enrich[:done] %> / <%= @enrich[:total] %>. <a href="/import">Refresh</a></p>
+  <% elsif @pending > 0 %>
+    <p><%= @pending %> books haven't been looked up on Open Library yet. That lookup fills in covers, missing details and community ratings.</p>
+    <form method="post" action="/enrich"><button>Fetch in background</button></form>
+  <% else %>
+    <p class="muted">Everything has been looked up. Run <code>bin/enrich --all</code> to refresh community ratings.</p>
+  <% end %>
+</div>

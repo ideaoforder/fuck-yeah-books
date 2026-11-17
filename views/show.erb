@@ -1,0 +1,97 @@
+<% b = @book %>
+<article class="book">
+  <div class="art"><%= cover(b, "L") %></div>
+  <div>
+    <h1><%= h b.display_title %></h1>
+    <% if b.subtitle %><p class="sub"><%= h b.subtitle %></p><% end %>
+    <p class="by"><%= h b.author_list.join(", ") %></p>
+    <p>
+      <span class="pill <%= b.status %>"><%= Shelf::Book::STATUSES[b.status] %></span>
+      <% if b.owned %><span class="pill">owned</span><% end %>
+      <% b.tag_list.each do |t| %><a class="pill tag" href="/?q=<%= h t %>"><%= h t %></a><% end %>
+    </p>
+    <dl class="meta">
+      <% [["Format", b.format], ["ISBN", b.isbn13], ["Publisher", b.publisher], ["Published", b.published_year],
+          ["Pages", b.pages], ["Added", b.added_on && fmt_date(b.added_on)]].each do |k, v| next unless v %>
+        <dt><%= k %></dt><dd><%= h v %></dd>
+      <% end %>
+    </dl>
+
+    <div class="ratings">
+      <div><strong><%= stars(b.rating) %></strong><span>You</span></div>
+      <% if b.gr_avg_rating %>
+        <div><strong><%= format("%.2f", b.gr_avg_rating) %></strong><span>Goodreads avg <%= delta(b.rating, b.gr_avg_rating) %></span></div>
+      <% end %>
+      <% if b.ol_avg_rating %>
+        <div><strong><%= format("%.2f", b.ol_avg_rating) %></strong><span>Open Library avg (<%= b.ol_rating_count %>) <%= delta(b.rating, b.ol_avg_rating) %></span></div>
+      <% end %>
+    </div>
+
+    <% if b.review.to_s.strip != "" %>
+      <blockquote class="review"><%= simple_format(b.review) %>
+        <footer><%= fmt_date(b.reviewed_on) %> · <a href="/books/<%= b.id %>/review.json">review.json</a></footer>
+      </blockquote>
+    <% end %>
+    <% if b.notes.to_s.strip != "" %><p class="notes"><%= simple_format(b.notes) %></p><% end %>
+
+    <p class="actions">
+      <a class="button" href="/books/<%= b.id %>/edit">Edit / review</a>
+      <form method="post" action="/books/<%= b.id %>/enrich" class="inline"><button class="ghost">Refresh metadata</button></form>
+      <% links = Shelf::Booklog.same_as(b) %>
+      <% links.each do |u| %><a class="muted" href="<%= h u %>" target="_blank" rel="noopener"><%= u[%r{//(?:www\.)?([^/]+)}, 1] %></a><% end %>
+    </p>
+  </div>
+</article>
+
+<section class="two">
+  <div class="card">
+    <h2>Reads</h2>
+    <ul class="plain">
+      <% b.reads.each do |r| %>
+        <li>
+          <%= r.started_on ? "#{fmt_date(r.started_on)} → " : "" %><%= r.finished_on ? fmt_date(r.finished_on) : (r.started_on ? "in progress" : "date unknown") %>
+          <% if r.started_on && !r.finished_on %>
+            <form method="post" action="/reads/<%= r.id %>" class="inline">
+              <input type="hidden" name="_method" value="patch"><input type="hidden" name="finished_on" value="<%= today %>">
+              <button class="small">Finished today</button>
+            </form>
+          <% end %>
+          <form method="post" action="/reads/<%= r.id %>" class="inline"><input type="hidden" name="_method" value="delete"><button class="small ghost" title="Remove">×</button></form>
+        </li>
+      <% end %>
+      <% if b.reads.empty? %><li class="muted">Not logged yet.</li><% end %>
+    </ul>
+    <form method="post" action="/books/<%= b.id %>/reads" class="row">
+      <label>Started <input type="date" name="started_on"></label>
+      <label>Finished <input type="date" name="finished_on" value="<%= today %>"></label>
+      <button>Log read</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Lending</h2>
+    <ul class="plain">
+      <% b.borrows.each do |l| %>
+        <li>
+          <strong><%= h l.borrowed_by %></strong> · <%= fmt_date(l.borrowed_on) %> →
+          <% if l.returned_on %><%= fmt_date(l.returned_on) %><% else %>
+            <em>out <%= l.days_out %> days</em>
+            <form method="post" action="/borrows/<%= l.id %>/return" class="inline"><button class="small">Returned</button></form>
+          <% end %>
+          <form method="post" action="/borrows/<%= l.id %>" class="inline"><input type="hidden" name="_method" value="delete"><button class="small ghost" title="Remove">×</button></form>
+        </li>
+      <% end %>
+    </ul>
+    <% unless b.current_borrow %>
+      <form method="post" action="/books/<%= b.id %>/borrows" class="row">
+        <label>Lent to <input name="borrowed_by" required></label>
+        <label>On <input type="date" name="borrowed_on" value="<%= today %>"></label>
+        <button>Lend</button>
+      </form>
+    <% end %>
+  </div>
+</section>
+
+<form method="post" action="/books/<%= b.id %>" class="danger" onsubmit="return confirm('Delete this book and its reads/loans?')">
+  <input type="hidden" name="_method" value="delete"><button class="ghost">Delete book</button>
+</form>
