@@ -15,7 +15,7 @@
     <tr><th></th><th>Book</th><th class="num">You</th><th class="num">Goodreads</th><th class="num">Open Library</th></tr>
     <% @books.each do |b| %>
       <tr>
-        <td class="c"><%= cover(b, "S", "thumb") %></td>
+        <td class="c"><%= cover(b, "M", "thumb") %></td>
         <td><a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a><div class="muted"><%= h b.author_list.first %></div></td>
         <td class="num"><%= stars(b.rating) %></td>
         <td class="num"><%= b.gr_avg_rating ? format("%.2f", b.gr_avg_rating) : "—" %> <%= delta(b.rating, b.gr_avg_rating) %></td>

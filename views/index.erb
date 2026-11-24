@@ -20,7 +20,7 @@
   <table class="books">
     <% @books.each do |b| %>
       <tr>
-        <td class="c"><a href="/books/<%= b.id %>"><%= cover(b, "S", "thumb") %></a></td>
+        <td class="c"><a href="/books/<%= b.id %>"><%= cover(b, "M", "thumb") %></a></td>
         <td>
           <a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a>
           <div class="muted"><%= h b.author_list.join(", ") %></div>

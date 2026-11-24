@@ -204,7 +204,7 @@ module Shelf
       res = Enricher.add_by_isbn(body["code"], status: body["status"], format: body["format"], owned: body["owned"])
       book = res.delete(:book)
       res[:book] = book && { id: book.id, title: book.display_title, authors: book.authors,
-                             cover: book.cover_src("S"), url: "/books/#{book.id}" }
+                             cover: book.cover_src("M"), url: "/books/#{book.id}" }
       status(res[:status] == "invalid" ? 422 : 200)
       res.to_json
     end

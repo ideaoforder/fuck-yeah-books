@@ -74,7 +74,13 @@ module Shelf
         key = ENV["GOOGLE_BOOKS_API_KEY"].to_s
         return nil if key.empty?
         data = http.call("https://www.googleapis.com/books/v1/volumes?q=isbn:#{isbn}&key=#{key}")
-        info = data && Array(data["items"]).first&.dig("volumeInfo") or return nil
+        item = data && Array(data["items"]).first or return nil
+        info = item["volumeInfo"] || {}
+        # Search results only carry ~128px thumbnails; the volume endpoint
+        # has the bigger sizes.
+        detail = item["id"] && http.call("https://www.googleapis.com/books/v1/volumes/#{item['id']}?key=#{key}")
+        links = detail&.dig("volumeInfo", "imageLinks") || info["imageLinks"] || {}
+        cover = links.values_at("large", "medium", "extraLarge", "small", "thumbnail").compact.first
         {
           title: info["title"],
           subtitle: info["subtitle"],
@@ -82,9 +88,15 @@ module Shelf
           publisher: info["publisher"],
           published_year: info["publishedDate"].to_s[/\d{4}/]&.to_i,
           pages: info["pageCount"],
-          cover_url: info.dig("imageLinks", "thumbnail")&.sub("http://", "https://")
+          cover_url: cover && clean_google_cover(cover)
         }.reject { |_, v| v.nil? || v == "" }
       end
+
+      # https, and drop the fake page-curl Google paints on thumbnails.
+      def clean_google_cover(url) = url.sub("http://", "https://").sub("&edge=curl", "")
+
+      # Low-res covers we'll replace on refresh: Google search thumbnails.
+      def low_res_cover?(url) = url.to_s.match?(/books\.google.*[?&]zoom=1(&|\z)/)
 
       # For books without an ISBN (Kindle editions from Goodreads, etc.):
       # finds the Open Library work, which carries community ratings.

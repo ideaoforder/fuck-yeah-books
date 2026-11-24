@@ -5,7 +5,7 @@
   <table class="books">
     <% @out.each do |l| %>
       <tr>
-        <td class="c"><a href="/books/<%= l.book_id %>"><%= cover(l.book, "S", "thumb") %></a></td>
+        <td class="c"><a href="/books/<%= l.book_id %>"><%= cover(l.book, "M", "thumb") %></a></td>
         <td><a class="title" href="/books/<%= l.book_id %>"><%= h l.book.display_title %></a></td>
         <td><strong><%= h l.borrowed_by %></strong></td>
         <td class="muted"><%= fmt_date(l.borrowed_on) %> · <%= l.days_out %> days</td>

@@ -61,4 +61,34 @@ class LookupTest < ShelfTest
     assert_equal "Now Found", stub.refresh.title
     assert_equal 0, Shelf::Enricher.placeholders.count
   end
+  def test_google_books_prefers_large_cover_from_volume_endpoint
+    thumb = "http://books.google.com/books/content?id=V1&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+    large = "http://books.google.com/books/content?id=V1&printsec=frontcover&img=1&zoom=4&edge=curl&source=gbs_api"
+    search = { "items" => [{ "id" => "V1", "volumeInfo" => { "title" => "T", "imageLinks" => { "thumbnail" => thumb } } }] }
+    detail = { "volumeInfo" => { "imageLinks" => { "thumbnail" => thumb, "large" => large } } }
+    with_env("GOOGLE_BOOKS_API_KEY", "k") do
+      with_http("volumes/V1?" => detail, "volumes?q=" => search) do
+        assert_equal "https://books.google.com/books/content?id=V1&printsec=frontcover&img=1&zoom=4&source=gbs_api",
+                     Shelf::Lookup.by_isbn(ISBN)[:cover_url]
+      end
+    end
+  end
+
+  def test_refresh_replaces_low_res_google_thumbnail
+    thumb = "https://books.google.com/books/content?id=V1&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+    book = Shelf::Book.create(isbn13: ISBN, title: "T", cover_url: thumb)
+    search = { "items" => [{ "id" => "V1", "volumeInfo" => { "title" => "T" } }] }
+    detail = { "volumeInfo" => { "imageLinks" => { "large" => thumb.sub("zoom=1", "zoom=4") } } }
+    with_env("GOOGLE_BOOKS_API_KEY", "k") do
+      with_http("volumes/V1?" => detail, "volumes?q=" => search) { book.enrich! }
+    end
+    assert_includes book.refresh.cover_url, "zoom=4"
+  end
+
+  def test_open_library_cover_size_follows_request
+    b = Shelf::Book.new(cover_url: "https://covers.openlibrary.org/b/id/42-M.jpg")
+    assert_equal "https://covers.openlibrary.org/b/id/42-L.jpg", b.cover_src("L")
+    custom = Shelf::Book.new(cover_url: "https://example.com/c.jpg")
+    assert_equal "https://example.com/c.jpg", custom.cover_src("L")
+  end
 end

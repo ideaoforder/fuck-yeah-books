@@ -56,8 +56,14 @@ module Shelf
     def current_borrow = borrows.find { _1.returned_on.nil? }
     def community_rating = gr_avg_rating || ol_avg_rating
 
+    # size: "M" (~180px wide) or "L" (~500px). Open Library covers are stored
+    # at M and resized on request; other sources are used as stored.
     def cover_src(size = "M")
-      cover_url || (isbn13 && "https://covers.openlibrary.org/b/isbn/#{isbn13}-#{size}.jpg?default=false")
+      if cover_url.to_s.match?(%r{covers\.openlibrary\.org/.*-[SML]\.jpg})
+        cover_url.sub(/-[SML]\.jpg/, "-#{size}.jpg")
+      else
+        cover_url || (isbn13 && "https://covers.openlibrary.org/b/isbn/#{isbn13}-#{size}.jpg?default=false")
+      end
     end
 
     # Fill in blanks from Open Library / Google Books, and refresh community
@@ -68,6 +74,7 @@ module Shelf
         meta = Lookup.search(title, author_list.first) || {}
       end
       meta.each { |k, v| self[k] = v if self[k].nil? || self[k] == "" }
+      self.cover_url = meta[:cover_url] if meta[:cover_url] && Lookup.low_res_cover?(cover_url)
 
       work = openlibrary_work || meta[:openlibrary_work]
       if work && (r = Lookup.ratings(work))
