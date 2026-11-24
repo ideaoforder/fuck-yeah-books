@@ -10,7 +10,7 @@ class AppTest < ShelfTest
   end
 
   def test_scan_creates_and_enriches_from_open_library
-    res = scan("9780547928227", status: "read", owned: true)
+    res = scan("9780547928227", status: "read")
     assert_equal "created", res["status"]
     b = Shelf::Book.first
     assert_equal ["The Hobbit", "J.R.R. Tolkien", "paperback", 300, "OL262758W", 4.26, 812, "read", true],
@@ -164,5 +164,29 @@ class AppTest < ShelfTest
     assert_equal ["invalid", true, "Store sticker, not an ISBN"], res.values_at("status", "sticker", "message")
     refute scan("12345")["sticker"], "short junk is just invalid"
     refute scan("978044101359351699")["sticker"], "ISBN + price add-on still scans"
+  end
+
+  def test_scanned_books_are_owned_and_owned_tab
+    scan("9780547928227")
+    assert Shelf::Book.first(isbn13: "9780547928227").owned
+    unowned = Shelf::Book.create(title: "Library copy", status: "read")
+    rescanned = Shelf::Book.create(title: "Dune", isbn13: "9780441013593")
+    scan("9780441013593")
+    assert rescanned.refresh.owned
+
+    get "/?status=owned"
+    assert_includes last_response.body, "The Hobbit"
+    assert_includes last_response.body, "Dune"
+    refute_includes last_response.body, "Library copy"
+    assert_match(/Owned <small>2</, last_response.body)
+    unowned.update(owned: true)
+    get "/?status=owned&q=library"
+    assert_includes last_response.body, "Library copy"
+  end
+
+  def test_unknown_status_filter_shows_all
+    Shelf::Book.create(title: "Anything")
+    get "/?status=bogus"
+    assert_includes last_response.body, "Anything"
   end
 end

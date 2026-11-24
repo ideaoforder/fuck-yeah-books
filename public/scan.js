@@ -5,7 +5,7 @@
   const form = document.getElementById("scan-form");
   const input = document.getElementById("code");
   const results = document.getElementById("results");
-  const opts = ["status", "format", "owned"].map((id) => document.getElementById(id));
+  const opts = ["status", "format"].map((id) => document.getElementById(id));
 
   const refocus = () => setTimeout(() => {
     if (!opts.includes(document.activeElement)) input.focus();
@@ -32,7 +32,6 @@
           code,
           status: opts[0].value,
           format: opts[1].value,
-          owned: opts[2].checked,
         }),
       });
       const data = await res.json();

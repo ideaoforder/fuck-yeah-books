@@ -2,7 +2,7 @@
 
 <div class="card" id="finder">
   <h2>Search</h2>
-  <p class="muted">Title, author, or both. Searches Open Library<%= " and Google Books" unless ENV["GOOGLE_BOOKS_API_KEY"].to_s.empty? %>. Good for older books without a barcode. Pick a result to add it. Pasting an ISBN works too.</p>
+  <p class="muted">Title, author, or both. Searches Open Library<%= " and Google Books" unless ENV["GOOGLE_BOOKS_API_KEY"].to_s.empty? %>. Good for older books without a barcode. Pick a result to add it as a book you own. Pasting an ISBN works too.</p>
   <input id="q" type="search" placeholder="e.g. delillo underworld" autocomplete="off" autofocus>
   <div class="row opts">
     <label>Add as
@@ -10,7 +10,6 @@
         <% Shelf::Book::STATUSES.each do |k, v| %><option value="<%= k %>"><%= v %></option><% end %>
       </select>
     </label>
-    <label class="check"><input type="checkbox" id="add-owned" checked> Owned</label>
     <span id="find-status" class="muted"></span>
   </div>
   <ul id="results" class="results"></ul>
@@ -24,7 +23,6 @@
     <select name="status">
       <% Shelf::Book::STATUSES.each do |k, v| %><option value="<%= k %>"><%= v %></option><% end %>
     </select>
-    <label class="check"><input type="checkbox" name="owned" value="1" checked> Owned</label>
     <button>Look up &amp; add</button>
   </div>
 </form>

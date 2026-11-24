@@ -82,7 +82,10 @@ module Shelf
     get "/" do
       ds = Book.dataset
       @status = params["status"]
-      ds = ds.where(status: @status) if Book::STATUSES.key?(@status)
+      if @status == "owned" then ds = ds.where(owned: true)
+      elsif Book::STATUSES.key?(@status) then ds = ds.where(status: @status)
+      else @status = nil
+      end
       if (q = params["q"].to_s.strip) != ""
         like = "%#{q}%"
         ds = ds.where(Sequel.ilike(:title, like) | Sequel.ilike(:authors, like) | Sequel.ilike(:tags, like) |
@@ -101,6 +104,7 @@ module Shelf
       @books = ds.eager(:borrows).all
       @counts = Book.group_and_count(:status).to_h { [_1[:status], _1[:count]] }
       @counts["all"] = @counts.values.sum
+      @counts["owned"] = Book.where(owned: true).count
       erb :index
     end
 
@@ -122,7 +126,7 @@ module Shelf
 
     # Add by ISBN (typed or scanned) from the regular form.
     post "/books/isbn" do
-      res = Enricher.add_by_isbn(params["isbn"], status: params["status"], format: params["format"], owned: params.key?("owned"))
+      res = Enricher.add_by_isbn(params["isbn"], status: params["status"], format: params["format"])
       flash!(res[:message])
       redirect res[:book] ? "/books/#{res[:book].id}" : "/books/new"
     end
@@ -251,7 +255,7 @@ module Shelf
     post "/api/scan" do
       content_type :json
       body = JSON.parse(request.body.read) rescue params
-      res = Enricher.add_by_isbn(body["code"], status: body["status"], format: body["format"], owned: body["owned"])
+      res = Enricher.add_by_isbn(body["code"], status: body["status"], format: body["format"])
       book = res.delete(:book)
       res[:book] = book && { id: book.id, title: book.display_title, authors: book.authors,
                              cover: book.cover_src("M"), url: "/books/#{book.id}" }
@@ -301,7 +305,7 @@ module Shelf
     post "/api/books" do
       content_type :json
       body = JSON.parse(request.body.read) rescue halt(400, { error: "bad JSON" }.to_json)
-      res = Enricher.add_from_search(body.fetch("pick", {}), status: body["status"], owned: body["owned"])
+      res = Enricher.add_from_search(body.fetch("pick", {}), status: body["status"])
       { status: res[:status], message: res[:message], url: "/books/#{res[:book].id}" }.to_json
     rescue Sequel::ValidationFailed => e
       halt 422, { error: e.message }.to_json

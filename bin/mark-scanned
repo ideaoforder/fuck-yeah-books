@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Mark books as scanned (canonical edition for duplicate merging).
+# Mark books as scanned: owned, and the canonical edition for duplicate merging.
 # Useful for books scanned before scanned_at was tracked.
 #   bin/mark-scanned 2026-11-24          # books added on/after this date
 #   bin/mark-scanned 2026-11-24 --dry-run
@@ -13,6 +13,6 @@ scope.order(:created_at).each { |b| puts "#{b.created_at.strftime('%F %R')}  #{b
 if ARGV.include?("--dry-run")
   puts "#{scope.count} books would be marked scanned."
 else
-  n = scope.update(Sequel[:scanned_at] => Sequel[:created_at])
+  n = scope.update(Sequel[:scanned_at] => Sequel[:created_at], owned: true)
   puts "Marked #{n} books as scanned."
 end

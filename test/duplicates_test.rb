@@ -72,7 +72,7 @@ class DuplicatesTest < ShelfTest
     old.add_read(finished_on: Date.new(2020, 1, 1))
     old.add_borrow(borrowed_by: "Sam", borrowed_on: Date.new(2025, 1, 1))
 
-    res = Enricher.add_by_isbn("9780547928227", owned: true) # FAKE_OL: same work, paperback
+    res = Enricher.add_by_isbn("9780547928227") # FAKE_OL: same work, paperback
     assert_equal "merged", res[:status]
     assert_equal 1, Book.count
     b = res[:book].refresh
@@ -140,5 +140,14 @@ class DuplicatesTest < ShelfTest
     c = Book.create(title: "Dune", authors: "Frank Herbert")
     post "/duplicates/dismiss", ids: [a.id.to_s, c.id.to_s]
     assert_empty Duplicates.groups
+  end
+
+  def test_migration_004_marks_scanned_books_owned
+    scanned = Book.create(title: "S", scanned_at: Time.now)
+    plain = Book.create(title: "P")
+    Sequel::Migrator.run(DB, File.join(ROOT, "db/migrations"), target: 3)
+    Sequel::Migrator.run(DB, File.join(ROOT, "db/migrations"))
+    assert scanned.refresh.owned
+    refute plain.refresh.owned
   end
 end

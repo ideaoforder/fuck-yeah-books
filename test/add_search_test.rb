@@ -55,7 +55,7 @@ class AddSearchTest < ShelfTest
   def test_adding_a_pick_without_isbn
     get "/api/search", q: "underworld"
     pick = JSON.parse(last_response.body).first
-    post "/api/books", JSON.generate(pick: pick, status: "read", owned: true), "CONTENT_TYPE" => "application/json"
+    post "/api/books", JSON.generate(pick: pick, status: "read"), "CONTENT_TYPE" => "application/json"
     data = JSON.parse(last_response.body)
     assert_equal "created", data["status"]
     b = Book.first

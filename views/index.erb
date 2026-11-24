@@ -4,6 +4,8 @@
     <% Shelf::Book::STATUSES.each do |key, label| %>
       <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort').merge('status' => key)) %>" class="<%= 'on' if @status == key %>"><%= label %> <small><%= @counts[key].to_i %></small></a>
     <% end %>
+    <span class="tab-sep"></span>
+    <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort').merge('status' => 'owned')) %>" class="<%= 'on' if @status == 'owned' %>">Owned <small><%= @counts['owned'] %></small></a>
   </div>
   <input type="hidden" name="status" value="<%= h @status %>">
   <input type="search" name="q" value="<%= h params['q'] %>" placeholder="Search title, author, tag, ISBN">

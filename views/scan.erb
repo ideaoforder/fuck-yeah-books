@@ -1,5 +1,5 @@
 <h1>Scan</h1>
-<p class="muted">Point the scanner at the barcode on the back cover. It types the ISBN and hits Enter, and the book is added. Keep going.</p>
+<p class="muted">Point the scanner at the barcode on the back cover. It types the ISBN and hits Enter, and the book is added as one you own. Keep going.</p>
 
 <form id="scan-form" class="card scanbox">
   <input id="code" name="code" autocomplete="off" autofocus placeholder="Waiting for scan…" inputmode="numeric">
@@ -14,7 +14,6 @@
         <% Shelf::Book::FORMATS.each do |f| %><option><%= f %></option><% end %>
       </select>
     </label>
-    <label class="check"><input type="checkbox" id="owned" checked> Owned</label>
   </div>
 </form>
 

@@ -5,7 +5,6 @@
   const list = document.getElementById("results");
   const status = document.getElementById("find-status");
   const addStatus = document.getElementById("add-status");
-  const addOwned = document.getElementById("add-owned");
   let timer, controller, results = [], active = -1;
 
   const el = (tag, attrs = {}, ...kids) => {
@@ -61,7 +60,7 @@
     const res = await fetch("/api/books", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ pick: results[i], status: addStatus.value, owned: addOwned.checked }),
+      body: JSON.stringify({ pick: results[i], status: addStatus.value }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -96,7 +95,6 @@
         const f = document.querySelector('form[action="/books/isbn"]');
         f.isbn.value = q;
         f.status.value = addStatus.value;
-        f.owned.checked = addOwned.checked;
         f.submit();
       } else if (active >= 0) {
         if (results[active].in_library) window.location = results[active].in_library;
