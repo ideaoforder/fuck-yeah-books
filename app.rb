@@ -281,6 +281,32 @@ module Shelf
       redirect "/duplicates"
     end
 
+    # --- add-by-search (typeahead) -------------------------------------
+
+    get "/api/search" do
+      content_type :json
+      results = Lookup.search_books(params["q"])
+      index = {}
+      Book.select(:id, :title, :authors, :isbn13, :openlibrary_work, :goodreads_id).each do |b|
+        Duplicates.keys_for(b).each { index[_1] = b.id }
+      end
+      results.each do |r|
+        probe = Book.new(r.slice(:title, :authors, :isbn13, :openlibrary_work))
+        id = Duplicates.keys_for(probe).lazy.map { index[_1] }.find(&:itself)
+        r[:in_library] = id && "/books/#{id}"
+      end
+      results.to_json
+    end
+
+    post "/api/books" do
+      content_type :json
+      body = JSON.parse(request.body.read) rescue halt(400, { error: "bad JSON" }.to_json)
+      res = Enricher.add_from_search(body.fetch("pick", {}), status: body["status"], owned: body["owned"])
+      { status: res[:status], message: res[:message], url: "/books/#{res[:book].id}" }.to_json
+    rescue Sequel::ValidationFailed => e
+      halt 422, { error: e.message }.to_json
+    end
+
     # --- compare ---------------------------------------------------------
 
     get "/compare" do

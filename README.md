@@ -7,6 +7,7 @@ A small, local book tracker: no Amazon, no bad UX. Sinatra + SQLite, about 1,600
 - **Library**: title, author, ISBN, format, status (want / reading / read / DNF), owned, tags.
 - **Reads**: every time you read a book, with start and finish dates, so rereads are kept.
 - **Rating & review**: quarter-star ratings (StoryGraph-style 0.25–5), a review and private notes.
+- **Search to add**: the Add page searches Open Library (and Google Books with a key) as you type. Good for older books with no barcode; picks with no ISBN are stored by Open Library work, which still gets covers, ratings and duplicate matching.
 - **Barcode scanning**: open **Scan**, point your USB scanner at the back cover, keep going. Metadata comes from Open Library, with Google Books as a fallback. Neither needs an API key.
 - **Import**: Goodreads CSV, StoryGraph CSV, or Booklog JSON. The format is auto-detected, and re-importing is safe because books are matched by ISBN, then by title + author, and existing data is never overwritten.
 - **Export**: Booklog JSON (lossless) or Goodreads-format CSV (imports anywhere).

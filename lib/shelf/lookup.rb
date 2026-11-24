@@ -98,6 +98,52 @@ module Shelf
       # Low-res covers we'll replace on refresh: Google search thumbnails.
       def low_res_cover?(url) = url.to_s.match?(/books\.google.*[?&]zoom=1(&|\z)/)
 
+      # Free-text search for the Add page's typeahead. Open Library results
+      # are works (any edition); Google results are specific editions.
+      # => [{ title:, authors:, year:, cover_url:, openlibrary_work:, isbn13:, editions:, source: }]
+      def search_books(query, limit: 8)
+        q = query.to_s.strip
+        return [] if q.length < 3
+        ol = search_open_library(q, limit)
+        gb = search_google(q, limit)
+        seen = ol.map { Book.match_key(_1[:title], _1[:authors]) }
+        ol + gb.reject { seen.include?(Book.match_key(_1[:title], _1[:authors])) }
+      end
+
+      def search_open_library(q, limit)
+        params = URI.encode_www_form(q: q, limit: limit,
+                                     fields: "key,title,subtitle,author_name,first_publish_year,cover_i,edition_count")
+        Array(http.call("https://openlibrary.org/search.json?#{params}")&.dig("docs")).filter_map do |d|
+          next unless d["title"]
+          {
+            source: "openlibrary", title: d["title"], subtitle: d["subtitle"],
+            authors: Array(d["author_name"]).first(3).join("; "),
+            year: d["first_publish_year"], editions: d["edition_count"],
+            openlibrary_work: d["key"].to_s.split("/").last,
+            cover_url: d["cover_i"] && "https://covers.openlibrary.org/b/id/#{d['cover_i']}-M.jpg"
+          }
+        end
+      end
+
+      def search_google(q, limit)
+        key = ENV["GOOGLE_BOOKS_API_KEY"].to_s
+        return [] if key.empty?
+        params = URI.encode_www_form(q: q, maxResults: limit, printType: "books", key: key)
+        Array(http.call("https://www.googleapis.com/books/v1/volumes?#{params}")&.dig("items")).filter_map do |item|
+          v = item["volumeInfo"] || {}
+          next unless v["title"]
+          ids = Array(v["industryIdentifiers"]).to_h { [_1["type"], _1["identifier"]] }
+          thumb = v.dig("imageLinks", "thumbnail")
+          {
+            source: "google", title: v["title"], subtitle: v["subtitle"],
+            authors: Array(v["authors"]).first(3).join("; "),
+            year: v["publishedDate"].to_s[/\d{4}/]&.to_i, publisher: v["publisher"], pages: v["pageCount"],
+            isbn13: ISBN.normalize(ids["ISBN_13"] || ids["ISBN_10"]),
+            cover_url: thumb && clean_google_cover(thumb)
+          }
+        end
+      end
+
       # For books without an ISBN (Kindle editions from Goodreads, etc.):
       # finds the Open Library work, which carries community ratings.
       def search(title, author)

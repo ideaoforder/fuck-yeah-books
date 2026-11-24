@@ -23,23 +23,49 @@ module Shelf
                            scanned_at: Time.now)
         found = book.enrich!
 
-        # Another edition of something already on the shelf. The scanned copy
-        # is canonical: it keeps its edition details and absorbs your rating,
-        # review, reads, loans and tags from the old entry.
-        if found
-          merged = []
-          while (existing = Duplicates.match_for(book))
-            merged << existing.display_title
-            Duplicates.merge!(book, [existing])
-          end
-          if merged.any?
-            return { status: "merged", book: book, found: true,
-                     message: "Merged with your existing entry for #{merged.first}" }
-          end
+        if found && (merged = absorb_duplicates(book))
+          return { status: "merged", book: book, found: true, message: "Merged with your existing entry for #{merged}" }
         end
 
         msg = found ? "Added #{book.display_title}" : "Added ISBN #{isbn}. No metadata found yet (try Refresh later)"
         { status: "created", book: book, message: msg, found: found }
+      end
+
+      # Add a pick from the typeahead (often an older book with no barcode).
+      # Like a scan, it's the copy you own, so it's canonical.
+      SEARCH_ATTRS = %i[title subtitle authors openlibrary_work isbn13 cover_url publisher pages].freeze
+
+      def add_from_search(pick, status: nil, owned: false)
+        pick = pick.transform_keys(&:to_sym)
+        attrs = pick.slice(*SEARCH_ATTRS).reject { |_, v| v.nil? || v.to_s.empty? }
+        attrs[:published_year] = pick[:year].to_i if pick[:year].to_s.match?(/\A\d{3,4}\z/)
+        attrs[:isbn13] = ISBN.normalize(attrs[:isbn13]) if attrs[:isbn13]
+
+        if attrs[:isbn13] && (book = Book.first(isbn13: attrs[:isbn13]))
+          book.update(scanned_at: Time.now)
+          return { status: "exists", book: book, message: "Already in your library: #{book.display_title}" }
+        end
+
+        book = Book.create(**attrs, status: Book::STATUSES.key?(status) ? status : "want",
+                                    owned: !!owned, scanned_at: Time.now)
+        book.enrich!
+        if (merged = absorb_duplicates(book))
+          return { status: "merged", book: book, message: "Merged with your existing entry for #{merged}" }
+        end
+        { status: "created", book: book, message: "Added #{book.display_title}" }
+      end
+
+      # Another edition of something already on the shelf. The new (scanned
+      # or picked) copy is canonical: it keeps its edition details and absorbs
+      # your rating, review, reads, loans and tags from the old entry.
+      # => title of the first entry merged in, or nil.
+      def absorb_duplicates(book)
+        merged = nil
+        while (existing = Duplicates.match_for(book))
+          merged ||= existing.display_title
+          Duplicates.merge!(book, [existing])
+        end
+        merged
       end
 
       def import(data)
