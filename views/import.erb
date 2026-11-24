@@ -20,6 +20,10 @@
   </div>
 </section>
 
+<% if @duplicates > 0 %>
+  <p class="flash"><%= @duplicates %> possible duplicate <%= @duplicates == 1 ? "group" : "groups" %> in your library. <a href="/duplicates">Review them</a></p>
+<% end %>
+
 <div class="card">
   <h2>Metadata &amp; community ratings</h2>
   <% if @enrich[:running] %>

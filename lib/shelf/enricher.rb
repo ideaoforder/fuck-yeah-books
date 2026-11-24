@@ -20,7 +20,16 @@ module Shelf
         book = Book.create(isbn13: isbn, status: Book::STATUSES.key?(status) ? status : "want",
                            format: Book::FORMATS.include?(format) ? format : nil, owned: !!owned)
         found = book.enrich!
-        msg = found ? "Added #{book.display_title}" : "Added ISBN #{isbn} — no metadata found yet (try Refresh later)"
+
+        # Another edition of something already on the shelf: fold this
+        # scan into it (one copy per book) rather than adding a second.
+        if found && (existing = Duplicates.match_for(book))
+          Duplicates.merge!(existing, [book])
+          return { status: "exists", book: existing,
+                   message: "Already in your library (another edition): #{existing.display_title}" }
+        end
+
+        msg = found ? "Added #{book.display_title}" : "Added ISBN #{isbn}. No metadata found yet (try Refresh later)"
         { status: "created", book: book, message: msg, found: found }
       end
 

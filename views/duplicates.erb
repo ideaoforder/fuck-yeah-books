@@ -1,0 +1,35 @@
+<h1>Possible duplicates</h1>
+<% if @groups.empty? %>
+  <p class="empty">No duplicates found.</p>
+<% else %>
+  <p class="muted"><%= @groups.size %> <%= @groups.size == 1 ? "group" : "groups" %>. Pick the copy to keep and merge. Nothing is lost: blank fields are filled from the other copies, reviews and notes are combined, tags are merged, reads and loans move over, and the most-finished status wins.</p>
+
+  <% @groups.each do |g| %>
+    <% keeper = g.suggested_keeper %>
+    <form class="card dup" method="post" action="/duplicates/merge">
+      <p class="muted"><%= g.reasons.join(" · ") %></p>
+      <table class="books">
+        <tr><th>Keep</th><th></th><th>Book</th><th>ISBN</th><th>Format</th><th>Status</th><th class="num">Rating</th><th class="num">Reads</th><th>Review</th></tr>
+        <% g.books.each do |b| %>
+          <tr>
+            <td><input type="radio" name="keep" value="<%= b.id %>" <%= 'checked' if b == keeper %>>
+                <input type="hidden" name="ids[]" value="<%= b.id %>"></td>
+            <td class="c"><%= cover(b, "M", "thumb") %></td>
+            <td><a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a>
+                <div class="muted"><%= h b.author_list.join(", ") %><%= " · #{b.published_year}" if b.published_year %><%= " · #{h b.publisher}" if b.publisher %></div></td>
+            <td class="muted"><%= b.isbn13 || "—" %></td>
+            <td class="muted"><%= h b.format %></td>
+            <td><%= status_pill(b) %></td>
+            <td class="num"><%= stars(b.rating) %></td>
+            <td class="num"><%= b.reads.size %></td>
+            <td class="muted"><%= b.review.to_s.strip.empty? ? "—" : h(b.review.to_s[0, 60]) + (b.review.to_s.size > 60 ? "…" : "") %></td>
+          </tr>
+        <% end %>
+      </table>
+      <div class="row">
+        <button>Merge into selected</button>
+        <button class="ghost" formaction="/duplicates/dismiss">Not duplicates</button>
+      </div>
+    </form>
+  <% end %>
+<% end %>

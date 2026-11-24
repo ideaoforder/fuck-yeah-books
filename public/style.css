@@ -60,7 +60,7 @@ table.books th { font-size: .8rem; color: var(--muted); font-weight: 500; }
 .blank { background: var(--line); }
 span.cover.blank { aspect-ratio: 2/3; }
 
-.pill { display: inline-block; vertical-align: middle; font-size: .75rem; padding: .1rem .5rem; border-radius: 99px; background: var(--line); color: var(--fg); margin-right: .25rem; }
+.pill { display: inline-block; vertical-align: middle; white-space: nowrap; font-size: .75rem; padding: .1rem .5rem; border-radius: 99px; background: var(--line); color: var(--fg); margin-right: .25rem; }
 .pill.read { background: #2f7d4a22; color: var(--up); }
 .pill.reading { background: #c48a1c22; color: #b07a10; }
 .pill.dnf { background: #b03a2e22; color: var(--down); }
@@ -112,3 +112,5 @@ ul.plain li { padding: .3rem 0; border-bottom: 1px dashed var(--line); }
 td.rate { white-space: nowrap; }
 form.finish button { vertical-align: middle; }
 .rate-slot[hidden] { display: none; }
+.dup .row { margin-top: .8rem; }
+.dupnote { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }

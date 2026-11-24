@@ -13,8 +13,6 @@ module Shelf
     #   { book: {column => value}, reads: [[started_on, finished_on], ...], borrows: [{...}] }
     # Base handles de-duplication and merging so re-importing is safe.
     class Base
-      STATUS_RANK = { "want" => 0, "reading" => 1, "dnf" => 2, "read" => 3 }.freeze
-
       def self.call(io) = new(io).run
 
       def initialize(io)
@@ -26,10 +24,8 @@ module Shelf
 
       def run
         result = Result.new(source_name)
-        index = Book.all.each_with_object({}) do |b, h|
-          h[b.isbn13] = b if b.isbn13
-          h[b.match_key] = b
-        end
+        index = {}
+        Book.all.each { |b| Duplicates.keys_for(b).each { index[_1] = b } }
 
         DB.transaction do
           each_record do |rec, line|
@@ -47,12 +43,12 @@ module Shelf
         attrs = rec[:book].reject { |_, v| v.nil? || v == "" }
         # A rating in an export means it was read, whatever shelf it's on.
         attrs[:status] = "read" if attrs[:rating] && !Book::RATEABLE.include?(attrs[:status])
-        book = index[attrs[:isbn13]] || index[Book.match_key(attrs[:title], attrs[:authors])]
+        book = Duplicates.keys_for(Book.new(attrs.slice(*Duplicates::MATCH_ATTRS))).lazy.map { index[_1] }.find(&:itself)
 
         if book
           attrs.each { |k, v| book[k] = v if book[k].nil? || book[k] == "" }
           book.gr_avg_rating = attrs[:gr_avg_rating] if attrs[:gr_avg_rating]
-          if STATUS_RANK.fetch(attrs[:status], 0) > STATUS_RANK.fetch(book.status, 0)
+          if Book::STATUS_RANK.fetch(attrs[:status], 0) > Book::STATUS_RANK.fetch(book.status, 0)
             book.status = attrs[:status]
           end
           book.status = "read" if book.rating && !book.rateable?
@@ -62,8 +58,7 @@ module Shelf
           book = Book.create(attrs)
           result.created += 1
         end
-        index[book.isbn13] = book if book.isbn13
-        index[book.match_key] = book
+        Duplicates.keys_for(book).each { index[_1] = book }
 
         existing = book.reads.map { [_1.started_on, _1.finished_on] }
         Array(rec[:reads]).uniq.each do |started, finished|

@@ -1,4 +1,13 @@
 <% b = @book %>
+<% if (d = @duplicate) %>
+  <form class="flash dupnote" method="post" action="/duplicates/merge">
+    Looks like a duplicate of <a href="/books/<%= d.id %>"><%= h d.display_title %></a><%= " (#{d.isbn13})" if d.isbn13 %>.
+    <input type="hidden" name="ids[]" value="<%= b.id %>"><input type="hidden" name="ids[]" value="<%= d.id %>">
+    <input type="hidden" name="keep" value="<%= b.id %>"><input type="hidden" name="return_to" value="book">
+    <button class="small">Merge that one into this</button>
+    <a href="/duplicates">Review</a>
+  </form>
+<% end %>
 <article class="book">
   <div class="art"><%= cover(b, "L") %></div>
   <div>

@@ -13,9 +13,13 @@ module Shelf
     EDITABLE = %i[isbn13 title subtitle authors publisher published_year pages format cover_url
                   status owned rating review reviewed_on tags notes].freeze
 
+    STATUS_RANK = { "want" => 0, "reading" => 1, "dnf" => 2, "read" => 3 }.freeze
+
+    # "The Hobbit: or There and Back Again" + "J. R. R. Tolkien" → "hobbit|tolkien"
     def self.match_key(title, authors)
-      t = title.to_s.downcase.sub(/\s*[:(].*/, "").gsub(/[^a-z0-9]/, "")
-      a = authors.to_s.split(/[;,]/).first.to_s.downcase.split.last.to_s.gsub(/[^a-z0-9]/, "")
+      fold = ->(s) { s.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").downcase.gsub("&", " and ") }
+      t = fold.(title).sub(/\s*[:(\[].*/, "").sub(/\A\s*(the|a|an)\s+/, "").gsub(/[^a-z0-9]/, "")
+      a = fold.(authors.to_s.split(/[;,]/).first).split.last.to_s.gsub(/[^a-z0-9]/, "")
       "#{t}|#{a}"
     end
 

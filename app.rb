@@ -7,6 +7,7 @@ require_relative "lib/shelf/db"
 require_relative "lib/shelf/isbn"
 require_relative "lib/shelf/lookup"
 require_relative "lib/shelf/models"
+require_relative "lib/shelf/duplicates"
 require_relative "lib/shelf/importers/base"
 require_relative "lib/shelf/importers/goodreads"
 require_relative "lib/shelf/importers/storygraph"
@@ -128,6 +129,7 @@ module Shelf
 
     get "/books/:id" do
       @book = Book[params["id"]] or halt 404
+      @duplicate = Duplicates.match_for(@book)
       erb :show
     end
 
@@ -257,6 +259,28 @@ module Shelf
       res.to_json
     end
 
+    # --- duplicates ------------------------------------------------------
+
+    get "/duplicates" do
+      @groups = Duplicates.groups
+      erb :duplicates
+    end
+
+    post "/duplicates/merge" do
+      ids = Array(params["ids"]).map(&:to_i)
+      keeper = Book[params["keep"].to_i] or halt 400, "Pick a book to keep"
+      others = Book.where(id: ids - [keeper.id]).all
+      Duplicates.merge!(keeper, others)
+      flash!("Merged #{others.size + 1} copies into #{keeper.display_title}.")
+      redirect params["return_to"] == "book" ? "/books/#{keeper.id}" : "/duplicates"
+    end
+
+    post "/duplicates/dismiss" do
+      Duplicates.dismiss!(Array(params["ids"]))
+      flash!("Got it, those aren't duplicates.")
+      redirect "/duplicates"
+    end
+
     # --- compare ---------------------------------------------------------
 
     get "/compare" do
@@ -273,6 +297,7 @@ module Shelf
       @pending = Book.where(looked_up_at: nil).count
       @placeholders = Enricher.placeholders.count
       @google_key = !ENV["GOOGLE_BOOKS_API_KEY"].to_s.empty?
+      @duplicates = Duplicates.count
       erb :import
     end
 
