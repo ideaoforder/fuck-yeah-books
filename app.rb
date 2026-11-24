@@ -222,6 +222,8 @@ module Shelf
     get "/import" do
       @enrich = Enricher.status
       @pending = Book.where(looked_up_at: nil).count
+      @placeholders = Enricher.placeholders.count
+      @google_key = !ENV["GOOGLE_BOOKS_API_KEY"].to_s.empty?
       erb :import
     end
 
@@ -238,7 +240,7 @@ module Shelf
     end
 
     post "/enrich" do
-      Enricher.enrich_all_in_background
+      Enricher.enrich_all_in_background(params["missing"] ? Enricher.placeholders : Book.where(looked_up_at: nil))
       redirect "/import"
     end
 

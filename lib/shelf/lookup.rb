@@ -22,8 +22,29 @@ module Shelf
       end
 
       # => Hash of Book column values, or nil.
+      # Open Library's books API, then its search index (which sometimes knows
+      # an ISBN the books API doesn't), then Google Books.
       def by_isbn(isbn13)
-        open_library(isbn13) || google_books(isbn13)
+        open_library(isbn13) || open_library_search(isbn13) || google_books(isbn13)
+      end
+
+      def open_library_search(isbn)
+        fields = "key,title,subtitle,author_name,publisher,first_publish_year,number_of_pages_median," \
+                 "cover_i,ratings_average,ratings_count"
+        doc = http.call("https://openlibrary.org/search.json?isbn=#{isbn}&limit=1&fields=#{fields}")&.dig("docs", 0)
+        return nil unless doc && doc["title"]
+        {
+          title: doc["title"],
+          subtitle: doc["subtitle"],
+          authors: Array(doc["author_name"]).join("; ").then { _1.empty? ? nil : _1 },
+          publisher: Array(doc["publisher"]).first,
+          published_year: doc["first_publish_year"],
+          pages: doc["number_of_pages_median"],
+          cover_url: doc["cover_i"] && "https://covers.openlibrary.org/b/id/#{doc['cover_i']}-M.jpg",
+          openlibrary_work: doc["key"].to_s.split("/").last,
+          ol_avg_rating: doc["ratings_average"]&.round(2),
+          ol_rating_count: doc["ratings_count"]
+        }.reject { |_, v| v.nil? || v == "" }
       end
 
       def open_library(isbn)
@@ -48,7 +69,11 @@ module Shelf
       end
 
       def google_books(isbn)
-        data = http.call("https://www.googleapis.com/books/v1/volumes?q=isbn:#{isbn}")
+        # Keyless requests get a quota of zero, so a key is effectively required.
+        # Free: console.cloud.google.com → enable "Books API" → Credentials → API key.
+        key = ENV["GOOGLE_BOOKS_API_KEY"].to_s
+        return nil if key.empty?
+        data = http.call("https://www.googleapis.com/books/v1/volumes?q=isbn:#{isbn}&key=#{key}")
         info = data && Array(data["items"]).first&.dig("volumeInfo") or return nil
         {
           title: info["title"],
@@ -98,11 +123,17 @@ module Shelf
         when Net::HTTPSuccess then JSON.parse(res.body)
         when Net::HTTPRedirection
           redirects.positive? ? get_json(URI.join(url, res["location"]).to_s, redirects - 1) : nil
+        when Net::HTTPNotFound then nil # normal "we don't have it"
+        else
+          warn "[lookup] #{redact(url)}: HTTP #{res.code} #{res.body.to_s[0, 200].gsub(/\s+/, ' ')}"
+          nil
         end
       rescue StandardError => e
-        warn "[lookup] #{url}: #{e.class}: #{e.message}"
+        warn "[lookup] #{redact(url)}: #{e.class}: #{e.message}"
         nil
       end
+
+      def redact(url) = url.sub(/key=[^&]+/, "key=…")
     end
   end
 end

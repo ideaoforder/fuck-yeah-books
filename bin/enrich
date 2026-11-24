@@ -1,10 +1,15 @@
 #!/usr/bin/env ruby
 # Backfill covers, metadata and Open Library community ratings.
 #   bin/enrich          # books never looked up
-#   bin/enrich --all    # every book (refreshes community ratings)
+#   bin/enrich --all      # every book (refreshes community ratings)
+#   bin/enrich --missing  # retry books that are still just an ISBN
 require_relative "../app"
 
-scope = ARGV.include?("--all") ? Shelf::Book.dataset : Shelf::Book.where(looked_up_at: nil)
+scope =
+  if ARGV.include?("--all") then Shelf::Book.dataset
+  elsif ARGV.include?("--missing") then Shelf::Enricher.placeholders
+  else Shelf::Book.where(looked_up_at: nil)
+  end
 ids = scope.select_map(:id)
 puts "Enriching #{ids.size} books…"
 ids.each_with_index do |id, i|

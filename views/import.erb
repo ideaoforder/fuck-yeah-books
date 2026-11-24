@@ -30,4 +30,10 @@
   <% else %>
     <p class="muted">Everything has been looked up. Run <code>bin/enrich --all</code> to refresh community ratings.</p>
   <% end %>
+  <% if @placeholders > 0 && !@enrich[:running] %>
+    <p><%= @placeholders %> books are just an ISBN: no source had them when they were added.</p>
+    <form method="post" action="/enrich"><input type="hidden" name="missing" value="1"><button class="ghost">Retry those</button></form>
+  <% end %>
+  <p class="muted">Sources: Open Library, then Open Library search, then Google Books
+    (<%= @google_key ? "API key set" : "off. Set <code>GOOGLE_BOOKS_API_KEY</code> to enable it" %>).</p>
 </div>

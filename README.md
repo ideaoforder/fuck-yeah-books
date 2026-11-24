@@ -23,6 +23,16 @@ bundle exec rake               # tests
 
 The database is created and migrated on boot at `db/shelf.sqlite3`. Set `SHELF_DB=/path/to/books.sqlite3` to keep it somewhere else, like a synced folder. To use it from an iPad on your LAN, run `bundle exec rackup -o 0.0.0.0 -p 4567`. Note there's no auth.
 
+### Metadata sources
+
+ISBN lookups try **Open Library** (books API, then its search index), then **Google Books**. Google gives keyless requests a quota of zero, so the Google fallback only works with a free API key:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create or pick a project and enable **Books API**.
+2. Go to **Credentials** → **Create credentials** → **API key**. You can restrict the key to the Books API.
+3. Run with `GOOGLE_BOOKS_API_KEY=... bundle exec rackup -p 4567`, or export it in your shell profile.
+
+Books that no source knew about are saved as just their ISBN. Retry them from **Import / Export** → *Retry those*, or with `bin/enrich --missing`. Failed lookups are logged to stderr as `[lookup] ...`.
+
 ### Moving off Goodreads / StoryGraph
 
 1. **Goodreads**: My Books → Import and export → *Export Library*.

@@ -38,8 +38,11 @@ module Shelf
 
       # Politely walks books that have never been looked up. One at a time,
       # with a pause, so we're a good Open Library citizen.
-      def enrich_all_in_background(pause: 0.5)
-        ids = Book.where(looked_up_at: nil).select_map(:id)
+      # Books added by ISBN whose lookup found nothing (shown as "ISBN 978…").
+      def placeholders = Book.exclude(isbn13: nil).where(Sequel.|({ title: nil }, { title: "" }))
+
+      def enrich_all_in_background(scope = Book.where(looked_up_at: nil), pause: 0.5)
+        ids = scope.select_map(:id)
         @lock.synchronize do
           return false if @state[:running] || ids.empty?
           @state = { running: true, done: 0, total: ids.size }
