@@ -91,4 +91,25 @@ class LookupTest < ShelfTest
     custom = Shelf::Book.new(cover_url: "https://example.com/c.jpg")
     assert_equal "https://example.com/c.jpg", custom.cover_src("L")
   end
+  def test_edition_without_cover_falls_back_to_work_cover
+    book = Shelf::Book.create(isbn13: "9780330369954", title: "Underworld", authors: "Don DeLillo")
+    ol = { "ISBN:9780330369954" => { "key" => "/books/OL43631685M", "title" => "Underworld" } }
+    responses = {
+      "api/books?bibkeys" => ol,
+      "isbn/9780330369954.json" => { "works" => [{ "key" => "/works/OL1921185W" }] },
+      "works/OL1921185W.json" => { "covers" => [-1, 8231856] }
+    }
+    with_http(responses) { book.enrich! }
+    assert_equal "https://covers.openlibrary.org/b/id/8231856-M.jpg", book.refresh.cover_url
+    assert_equal "https://covers.openlibrary.org/b/id/8231856-L.jpg", book.cover_src("L")
+  end
+
+  def test_falls_back_to_google_cover_when_work_has_none
+    book = Shelf::Book.create(isbn13: ISBN, title: "T", openlibrary_work: "OL9W")
+    gb = { "items" => [{ "volumeInfo" => { "title" => "T", "imageLinks" => { "thumbnail" => "http://books.google.com/x?zoom=1&edge=curl" } } }] }
+    with_env("GOOGLE_BOOKS_API_KEY", "k") do
+      with_http("works/OL9W.json" => { "covers" => [] }, "volumes?q=" => gb) { book.enrich! }
+    end
+    assert_equal "https://books.google.com/x?zoom=1", book.refresh.cover_url
+  end
 end

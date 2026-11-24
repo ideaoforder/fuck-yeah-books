@@ -3,11 +3,13 @@
 #   bin/enrich          # books never looked up
 #   bin/enrich --all      # every book (refreshes community ratings)
 #   bin/enrich --missing  # retry books that are still just an ISBN
+#   bin/enrich --covers   # retry books with no cover
 require_relative "../app"
 
 scope =
   if ARGV.include?("--all") then Shelf::Book.dataset
   elsif ARGV.include?("--missing") then Shelf::Enricher.placeholders
+  elsif ARGV.include?("--covers") then Shelf::Book.where(cover_url: nil)
   else Shelf::Book.where(looked_up_at: nil)
   end
 ids = scope.select_map(:id)

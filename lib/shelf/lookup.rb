@@ -112,6 +112,18 @@ module Shelf
         }.compact
       end
 
+      # When the edition has no cover: the work's cover (any edition of the
+      # same book, sharp), then Google's cover for this exact ISBN.
+      def fallback_cover(isbn: nil, work: nil)
+        work_cover(work) || (isbn && google_books(isbn)&.dig(:cover_url))
+      end
+
+      def work_cover(work_id)
+        return nil unless work_id
+        id = Array(http.call("https://openlibrary.org/works/#{work_id}.json")&.dig("covers")).find { _1.to_i.positive? }
+        id && "https://covers.openlibrary.org/b/id/#{id}-M.jpg"
+      end
+
       def ratings(work_id)
         s = http.call("https://openlibrary.org/works/#{work_id}/ratings.json")&.dig("summary") or return nil
         return nil unless s["average"]

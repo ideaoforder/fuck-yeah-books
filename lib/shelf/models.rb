@@ -75,6 +75,9 @@ module Shelf
       end
       meta.each { |k, v| self[k] = v if self[k].nil? || self[k] == "" }
       self.cover_url = meta[:cover_url] if meta[:cover_url] && Lookup.low_res_cover?(cover_url)
+      if cover_url.to_s.empty?
+        self.cover_url = Lookup.fallback_cover(isbn: isbn13, work: openlibrary_work || meta[:openlibrary_work])
+      end
 
       work = openlibrary_work || meta[:openlibrary_work]
       if work && (r = Lookup.ratings(work))

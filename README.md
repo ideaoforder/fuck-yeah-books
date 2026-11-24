@@ -31,7 +31,7 @@ ISBN lookups try **Open Library** (books API, then its search index), then **Goo
 2. Go to **Credentials** → **Create credentials** → **API key**. You can restrict the key to the Books API.
 3. Put `GOOGLE_BOOKS_API_KEY=...` in a `.env` file in the project root (see `.env.example`; it is gitignored), or set it in your shell. Real environment variables win over `.env`.
 
-Books that no source knew about are saved as just their ISBN. Retry them from **Import / Export** → *Retry those*, or with `bin/enrich --missing`. Failed lookups are logged to stderr as `[lookup] ...`.
+Books that no source knew about are saved as just their ISBN. Retry them from **Import / Export** → *Retry those*, or with `bin/enrich --missing`. When an edition has no cover, the work's cover (another edition) is used, then Google's; `bin/enrich --covers` retries every coverless book. Failed lookups are logged to stderr as `[lookup] ...`.
 
 ### Moving off Goodreads / StoryGraph
 
