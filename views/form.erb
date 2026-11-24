@@ -28,7 +28,7 @@
 <fieldset>
   <legend>Rating &amp; review</legend>
   <div class="grid">
-    <label>Rating (0.25–5) <input type="number" name="book[rating]" value="<%= h @book.rating %>" min="0.25" max="5" step="0.25"></label>
+    <label>Rating (0.25–5, Read/DNF only) <input type="number" name="book[rating]" value="<%= h @book.rating %>" min="0.25" max="5" step="0.25"></label>
     <label>Reviewed on <input type="date" name="book[reviewed_on]" value="<%= @book.reviewed_on&.iso8601 %>"></label>
   </div>
   <label>Review <textarea name="book[review]" rows="8"><%= h @book.review %></textarea></label>

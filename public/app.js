@@ -22,6 +22,8 @@
     if (data.status === "read") {
       document.querySelectorAll(`form.finish[data-id="${data.id}"]`).forEach((f) => f.remove());
     }
+    const rateable = data.status === "read" || data.status === "dnf";
+    document.querySelectorAll(`[data-rate-for="${data.id}"]`).forEach((slot) => { slot.hidden = !rateable; });
   }
 
   async function save(el, value) {

@@ -89,14 +89,32 @@ class AppTest < ShelfTest
     assert last_response.redirect?
     assert_equal 3, Shelf::Book.count
   end
-  def test_inline_rating_marks_read_without_inventing_a_date
+  def test_inline_rating_requires_read_or_dnf
     b = Shelf::Book.create(title: "Piranesi", status: "want")
+    patch "/books/#{b.id}/rating", rating: "4"
+    assert_equal 422, last_response.status
+    assert_match(/read/, JSON.parse(last_response.body)["error"])
+    assert_nil b.refresh.rating
+
+    b.update(status: "read")
     patch "/books/#{b.id}/rating", rating: "4.25"
     assert last_response.ok?, last_response.body
-    data = JSON.parse(last_response.body)
-    assert_equal [4.25, "read", "Read"], data.values_at("rating", "status", "status_label")
-    b.refresh
-    assert_equal [4.25, "read", 0, Date.today], [b.rating, b.status, b.reads.size, b.reviewed_on]
+    assert_equal [4.25, "read"], JSON.parse(last_response.body).values_at("rating", "status")
+    assert_equal [4.25, 0, Date.today], [b.refresh.rating, b.reads.size, b.reviewed_on]
+  end
+
+  def test_edit_form_rejects_rating_on_unread_book
+    b = Shelf::Book.create(title: "X", status: "read", rating: 3.0)
+    patch "/books/#{b.id}", book: { status: "want", rating: "3" }
+    assert_includes last_response.body, "books you&#39;ve read"
+    assert_equal "read", b.refresh.status
+  end
+
+  def test_import_promotes_rated_to_read_books
+    csv = File.read(File.join(FIXTURES, "goodreads_library_export.csv")).sub(",0,4.34,Scholastic", ",4,4.34,Scholastic")
+    r = Shelf::Enricher.import(csv)
+    assert_empty r.errors
+    assert_equal ["read", 4.0], Shelf::Book.first(title: "Catching Fire").values.values_at(:status, :rating)
   end
 
   def test_inline_rating_keeps_dnf_and_can_clear
@@ -106,7 +124,7 @@ class AppTest < ShelfTest
   end
 
   def test_inline_rating_rejects_bad_values
-    b = Shelf::Book.create(title: "X")
+    b = Shelf::Book.create(title: "X", status: "read")
     patch "/books/#{b.id}/rating", rating: "4.1"
     assert_equal 422, last_response.status
     patch "/books/#{b.id}/rating", rating: "lots"
@@ -128,11 +146,16 @@ class AppTest < ShelfTest
   end
 
   def test_list_and_book_page_render_widgets
-    b = Shelf::Book.create(title: "Widget Book", status: "want", rating: 3.5)
+    b = Shelf::Book.create(title: "Widget Book", status: "read", rating: 3.5)
+    w = Shelf::Book.create(title: "Unread Book", status: "want")
     get "/"
     assert_includes last_response.body, %(data-id="#{b.id}" data-rating="3.5")
-    assert_includes last_response.body, %(action="/books/#{b.id}/finish")
+    assert_includes last_response.body, %(data-rate-for="#{w.id}" hidden)
+    assert_includes last_response.body, %(action="/books/#{w.id}/finish")
+    refute_includes last_response.body, %(action="/books/#{b.id}/finish")
     get "/books/#{b.id}"
     assert_includes last_response.body, %(class="stars")
+    get "/books/#{w.id}"
+    refute_includes last_response.body, %(class="stars")
   end
 end

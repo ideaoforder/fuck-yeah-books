@@ -47,6 +47,9 @@ module Shelf
       if rating && !(rating > 0 && rating <= 5 && (rating * 4 % 1).zero?)
         errors.add(:rating, "must be between 0.25 and 5, in quarter steps")
       end
+      if rating && !rateable?
+        errors.add(:rating, "can only be set on books you've read (or DNF'd)")
+      end
     end
 
     def display_title = title.to_s.strip.empty? ? "ISBN #{isbn13}" : title
@@ -91,11 +94,13 @@ module Shelf
       !meta.empty?
     end
 
-    # Inline rating. Rating something implies you read it, so want/reading
-    # becomes read, but no read date is invented. nil clears the rating.
+    RATEABLE = %w[read dnf].freeze
+
+    def rateable? = RATEABLE.include?(status)
+
+    # Inline rating. nil clears it.
     def rate!(value)
       self.rating = value
-      self.status = "read" if value && %w[want reading].include?(status)
       save_changes
     end
 

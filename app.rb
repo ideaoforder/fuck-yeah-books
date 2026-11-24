@@ -48,13 +48,15 @@ module Shelf
         { id: book.id, rating: book.rating, status: book.status, status_label: Book::STATUSES[book.status] }.to_json
       end
 
-      # Clickable quarter-star rating widget (public/app.js).
+      # Clickable quarter-star rating widget (public/app.js). Hidden until the
+      # book is read/DNF; app.js reveals it when "✓ Read" is clicked.
       def star_input(book)
         r = book.rating
-        %(<span class="stars" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="5" ) +
+        %(<span class="rate-slot" data-rate-for="#{book.id}"#{' hidden' unless book.rateable?}>) +
+          %(<span class="stars" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="5" ) +
           %(aria-valuenow="#{r || 0}" data-id="#{book.id}" data-rating="#{r}" title="Click to rate (click again to clear)">) +
           %(<span class="fill" style="width:#{(r || 0) * 20}%"></span></span>) +
-          %(<span class="stars-val">#{r ? format('%g', r) : ''}</span>)
+          %(<span class="stars-val">#{r ? format('%g', r) : ''}</span></span>)
       end
 
       def status_pill(book)

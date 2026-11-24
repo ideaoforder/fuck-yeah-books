@@ -45,6 +45,8 @@ module Shelf
 
       def upsert(rec, index, result)
         attrs = rec[:book].reject { |_, v| v.nil? || v == "" }
+        # A rating in an export means it was read, whatever shelf it's on.
+        attrs[:status] = "read" if attrs[:rating] && !Book::RATEABLE.include?(attrs[:status])
         book = index[attrs[:isbn13]] || index[Book.match_key(attrs[:title], attrs[:authors])]
 
         if book
@@ -53,6 +55,7 @@ module Shelf
           if STATUS_RANK.fetch(attrs[:status], 0) > STATUS_RANK.fetch(book.status, 0)
             book.status = attrs[:status]
           end
+          book.status = "read" if book.rating && !book.rateable?
           book.save_changes
           result.updated += 1
         else

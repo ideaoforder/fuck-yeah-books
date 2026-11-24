@@ -60,7 +60,7 @@ table.books th { font-size: .8rem; color: var(--muted); font-weight: 500; }
 .blank { background: var(--line); }
 span.cover.blank { aspect-ratio: 2/3; }
 
-.pill { display: inline-block; font-size: .75rem; padding: .1rem .5rem; border-radius: 99px; background: var(--line); color: var(--fg); margin-right: .25rem; }
+.pill { display: inline-block; vertical-align: middle; font-size: .75rem; padding: .1rem .5rem; border-radius: 99px; background: var(--line); color: var(--fg); margin-right: .25rem; }
 .pill.read { background: #2f7d4a22; color: var(--up); }
 .pill.reading { background: #c48a1c22; color: #b07a10; }
 .pill.dnf { background: #b03a2e22; color: var(--down); }
@@ -74,9 +74,9 @@ dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: .15rem 1re
 dl.meta dt { color: var(--muted); }
 dl.meta dd { margin: 0; }
 .ratings { display: flex; gap: 1.6rem; margin: 1rem 0; flex-wrap: wrap; }
-.ratings div { display: flex; flex-direction: column; }
-.ratings strong { font-size: 1.5rem; }
-.ratings span { font-size: .8rem; color: var(--muted); }
+.ratings > div { display: flex; flex-direction: column; }
+.ratings > div > strong { font-size: 1.5rem; }
+.ratings > div > span { font-size: .8rem; color: var(--muted); }
 .ratings.big { margin-bottom: .5rem; }
 .delta { font-size: .8rem; font-weight: 600; }
 .delta.up { color: var(--up); }
@@ -100,7 +100,7 @@ ul.plain li { padding: .3rem 0; border-bottom: 1px dashed var(--line); }
 .scans li.pending { opacity: .6; }
 
 /* inline star rating */
-.stars { position: relative; display: inline-block; cursor: pointer; color: var(--line); font-size: 1.15rem; line-height: 1; white-space: nowrap; vertical-align: middle; }
+.stars { position: relative; display: inline-block; cursor: pointer; color: color-mix(in srgb, var(--muted) 40%, transparent); font-size: 1.15rem; line-height: 1; white-space: nowrap; vertical-align: middle; }
 .stars::before { content: "★★★★★"; }
 .stars .fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: #e0a100; pointer-events: none; }
 .stars .fill::before { content: "★★★★★"; }
@@ -111,3 +111,4 @@ ul.plain li { padding: .3rem 0; border-bottom: 1px dashed var(--line); }
 .ratings .mine .stars { font-size: 1.6rem; }
 td.rate { white-space: nowrap; }
 form.finish button { vertical-align: middle; }
+.rate-slot[hidden] { display: none; }

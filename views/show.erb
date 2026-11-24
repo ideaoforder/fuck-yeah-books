@@ -18,7 +18,7 @@
     </dl>
 
     <div class="ratings">
-      <div class="mine"><strong><%= star_input(b) %></strong><span>You</span></div>
+      <% if b.rateable? %><div class="mine"><strong><%= star_input(b) %></strong><span>You</span></div><% end %>
       <% if b.gr_avg_rating %>
         <div><strong><%= format("%.2f", b.gr_avg_rating) %></strong><span>Goodreads avg <%= delta(b.rating, b.gr_avg_rating) %></span></div>
       <% end %>
