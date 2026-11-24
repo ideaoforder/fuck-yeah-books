@@ -26,10 +26,10 @@
           <div class="muted"><%= h b.author_list.join(", ") %></div>
         </td>
         <td class="muted"><%= h b.format %></td>
-        <td><span class="pill <%= b.status %>"><%= Shelf::Book::STATUSES[b.status] %></span>
+        <td><%= status_pill(b) %> <%= finish_button(b) %>
           <% if (l = b.current_borrow) %><span class="pill lent">lent to <%= h l.borrowed_by %></span><% end %>
         </td>
-        <td class="num"><%= stars(b.rating) %></td>
+        <td class="num rate"><%= star_input(b) %></td>
         <td class="muted num"><%= b[:last_read] ? fmt_date(Date.parse(b[:last_read].to_s)) : "" %></td>
       </tr>
     <% end %>

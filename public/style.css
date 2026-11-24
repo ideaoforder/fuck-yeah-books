@@ -98,3 +98,16 @@ ul.plain li { padding: .3rem 0; border-bottom: 1px dashed var(--line); }
 .scans li.exists { border-left: 4px solid #c48a1c; }
 .scans li.invalid { border-left: 4px solid var(--down); }
 .scans li.pending { opacity: .6; }
+
+/* inline star rating */
+.stars { position: relative; display: inline-block; cursor: pointer; color: var(--line); font-size: 1.15rem; line-height: 1; white-space: nowrap; vertical-align: middle; }
+.stars::before { content: "★★★★★"; }
+.stars .fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: #e0a100; pointer-events: none; }
+.stars .fill::before { content: "★★★★★"; }
+.stars:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+.stars.saving { opacity: .6; }
+.stars.error .fill { color: var(--down); }
+.stars-val { display: inline-block; min-width: 2.2em; margin-left: .35rem; font-size: .8rem; color: var(--muted); text-align: left; font-variant-numeric: tabular-nums; }
+.ratings .mine .stars { font-size: 1.6rem; }
+td.rate { white-space: nowrap; }
+form.finish button { vertical-align: middle; }

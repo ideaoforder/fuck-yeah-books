@@ -89,4 +89,50 @@ class AppTest < ShelfTest
     assert last_response.redirect?
     assert_equal 3, Shelf::Book.count
   end
+  def test_inline_rating_marks_read_without_inventing_a_date
+    b = Shelf::Book.create(title: "Piranesi", status: "want")
+    patch "/books/#{b.id}/rating", rating: "4.25"
+    assert last_response.ok?, last_response.body
+    data = JSON.parse(last_response.body)
+    assert_equal [4.25, "read", "Read"], data.values_at("rating", "status", "status_label")
+    b.refresh
+    assert_equal [4.25, "read", 0, Date.today], [b.rating, b.status, b.reads.size, b.reviewed_on]
+  end
+
+  def test_inline_rating_keeps_dnf_and_can_clear
+    b = Shelf::Book.create(title: "Gormenghast", status: "dnf", rating: 2.0)
+    patch "/books/#{b.id}/rating", rating: ""
+    assert_equal [nil, "dnf"], [b.refresh.rating, b.status]
+  end
+
+  def test_inline_rating_rejects_bad_values
+    b = Shelf::Book.create(title: "X")
+    patch "/books/#{b.id}/rating", rating: "4.1"
+    assert_equal 422, last_response.status
+    patch "/books/#{b.id}/rating", rating: "lots"
+    assert_equal 422, last_response.status
+    assert_nil b.refresh.rating
+  end
+
+  def test_finish_json_and_html
+    b = Shelf::Book.create(title: "X", status: "reading")
+    header "Accept", "application/json"
+    post "/books/#{b.id}/finish"
+    assert_equal "read", JSON.parse(last_response.body)["status"]
+    assert_equal [Date.today], b.refresh.reads.map(&:finished_on)
+
+    header "Accept", "text/html"
+    header "Referer", "/books/#{b.id}"
+    post "/books/#{b.id}/finish"
+    assert last_response.redirect?
+  end
+
+  def test_list_and_book_page_render_widgets
+    b = Shelf::Book.create(title: "Widget Book", status: "want", rating: 3.5)
+    get "/"
+    assert_includes last_response.body, %(data-id="#{b.id}" data-rating="3.5")
+    assert_includes last_response.body, %(action="/books/#{b.id}/finish")
+    get "/books/#{b.id}"
+    assert_includes last_response.body, %(class="stars")
+  end
 end

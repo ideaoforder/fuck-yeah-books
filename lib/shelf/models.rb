@@ -88,6 +88,14 @@ module Shelf
       !meta.empty?
     end
 
+    # Inline rating. Rating something implies you read it, so want/reading
+    # becomes read, but no read date is invented. nil clears the rating.
+    def rate!(value)
+      self.rating = value
+      self.status = "read" if value && %w[want reading].include?(status)
+      save_changes
+    end
+
     # Record a finished read (or start one) and bump status accordingly.
     def log_read!(started_on: nil, finished_on: nil)
       add_read(started_on: started_on, finished_on: finished_on)

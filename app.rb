@@ -44,6 +44,29 @@ module Shelf
       def session_flash = request.cookies["flash"].tap { response.delete_cookie("flash") if _1 }
       def flash!(msg) = response.set_cookie("flash", value: msg, path: "/", httponly: true)
 
+      def book_status_json(book)
+        { id: book.id, rating: book.rating, status: book.status, status_label: Book::STATUSES[book.status] }.to_json
+      end
+
+      # Clickable quarter-star rating widget (public/app.js).
+      def star_input(book)
+        r = book.rating
+        %(<span class="stars" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="5" ) +
+          %(aria-valuenow="#{r || 0}" data-id="#{book.id}" data-rating="#{r}" title="Click to rate (click again to clear)">) +
+          %(<span class="fill" style="width:#{(r || 0) * 20}%"></span></span>) +
+          %(<span class="stars-val">#{r ? format('%g', r) : ''}</span>)
+      end
+
+      def status_pill(book)
+        %(<span class="pill #{book.status}" data-status-for="#{book.id}">#{Book::STATUSES[book.status]}</span>)
+      end
+
+      def finish_button(book)
+        return "" if book.status == "read"
+        %(<form method="post" action="/books/#{book.id}/finish" class="inline finish" data-id="#{book.id}">) +
+          %(<button class="small ghost" title="Mark read, finished today">✓ Read</button></form>)
+      end
+
       def book_params
         attrs = params.fetch("book", {}).slice(*Book::EDITABLE.map(&:to_s))
         attrs["owned"] = attrs.key?("owned") if params["book"]
@@ -132,6 +155,29 @@ module Shelf
       book = Book[params["id"]] or halt 404
       flash!(book.enrich! ? "Metadata refreshed." : "Nothing found for this book.")
       redirect "/books/#{book.id}"
+    end
+
+    # Inline rating from the star widget. Empty rating clears it.
+    patch "/books/:id/rating" do
+      book = Book[params["id"]] or halt 404
+      content_type :json
+      value = params["rating"].to_s.strip
+      book.rate!(value.empty? ? nil : Float(value))
+      book_status_json(book)
+    rescue ArgumentError, Sequel::ValidationFailed => e
+      halt 422, { error: e.message }.to_json
+    end
+
+    # One-click "finished it today".
+    post "/books/:id/finish" do
+      book = Book[params["id"]] or halt 404
+      book.log_read!(finished_on: Date.today)
+      if request.accept?("application/json") && !request.accept?("text/html")
+        content_type :json
+        book_status_json(book)
+      else
+        redirect back
+      end
     end
 
     get "/books/:id/review.json" do

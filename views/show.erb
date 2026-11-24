@@ -6,7 +6,7 @@
     <% if b.subtitle %><p class="sub"><%= h b.subtitle %></p><% end %>
     <p class="by"><%= h b.author_list.join(", ") %></p>
     <p>
-      <span class="pill <%= b.status %>"><%= Shelf::Book::STATUSES[b.status] %></span>
+      <%= status_pill(b) %> <%= finish_button(b) %>
       <% if b.owned %><span class="pill">owned</span><% end %>
       <% b.tag_list.each do |t| %><a class="pill tag" href="/?q=<%= h t %>"><%= h t %></a><% end %>
     </p>
@@ -18,7 +18,7 @@
     </dl>
 
     <div class="ratings">
-      <div><strong><%= stars(b.rating) %></strong><span>You</span></div>
+      <div class="mine"><strong><%= star_input(b) %></strong><span>You</span></div>
       <% if b.gr_avg_rating %>
         <div><strong><%= format("%.2f", b.gr_avg_rating) %></strong><span>Goodreads avg <%= delta(b.rating, b.gr_avg_rating) %></span></div>
       <% end %>
