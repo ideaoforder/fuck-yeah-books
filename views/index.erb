@@ -19,9 +19,30 @@
 <% if @books.empty? %>
   <p class="empty">No books yet. <a href="/scan">Scan some</a>, <a href="/books/new">add one</a>, or <a href="/import">import your Goodreads / StoryGraph library</a>.</p>
 <% else %>
-  <table class="books">
+  <%# Checkboxes live in the table but belong to this form (form="bulk"), so
+      the per-row forms (✓ Read) don't end up nested. %>
+  <form id="bulk" class="bulkbar" method="post" action="/books/bulk" hidden>
+    <strong><span id="bulk-count">0</span> selected</strong>
+    <select name="bulk_action" id="bulk-action">
+      <% Shelf::Bulk::ACTIONS.each do |k, v| %><option value="<%= k %>"><%= v %></option><% end %>
+    </select>
+    <select name="value" id="bulk-status" data-for="status">
+      <% Shelf::Book::STATUSES.each do |k, v| %><option value="<%= k %>"><%= v %></option><% end %>
+    </select>
+    <input name="value" id="bulk-tag" data-for="add_tag remove_tag" list="all-tags" placeholder="tag" disabled hidden>
+    <datalist id="all-tags"><% @all_tags.each do |t| %><option value="<%= h t %>"><% end %></datalist>
+    <button>Apply</button>
+    <button type="button" class="ghost" id="bulk-clear">Clear</button>
+  </form>
+
+  <table class="books selectable">
+    <tr class="head">
+      <th class="sel"><input type="checkbox" id="select-all" title="Select all <%= @books.size %>"></th>
+      <th colspan="6" class="muted"><%= @books.size %> <%= @books.size == 1 ? "book" : "books" %></th>
+    </tr>
     <% @books.each do |b| %>
       <tr>
+        <td class="sel"><input type="checkbox" name="ids[]" value="<%= b.id %>" form="bulk" aria-label="Select <%= h b.display_title %>"></td>
         <td class="c"><a href="/books/<%= b.id %>"><%= cover(b, "M", "thumb") %></a></td>
         <td>
           <a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a>

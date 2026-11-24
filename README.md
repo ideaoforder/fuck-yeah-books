@@ -4,7 +4,8 @@ A small, local book tracker: no Amazon, no bad UX. Sinatra + SQLite, about 1,600
 
 ## What it does
 
-- **Library**: title, author, ISBN, format, status (want / reading / read / DNF), owned, tags.
+- **Library**: title, author, ISBN, format, status (want / reading / read / DNF / not interested), owned, tags. Tabs for each status plus **Owned**.
+- **Bulk edit**: tick books in the list (shift-click for ranges) to set status, mark owned/not owned, add/remove a tag, or delete.
 - **Reads**: every time you read a book, with start and finish dates, so rereads are kept.
 - **Rating & review**: quarter-star ratings (StoryGraph-style 0.25–5), a review and private notes.
 - **Search to add**: the Add page searches Open Library (and Google Books with a key) as you type. Good for older books with no barcode; picks with no ISBN are stored by Open Library work, which still gets covers, ratings and duplicate matching.

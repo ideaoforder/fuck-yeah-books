@@ -122,7 +122,7 @@
         "aggregateRating": { "type": "array", "items": { "$ref": "#/$defs/AggregateRating" } },
         "review": { "$ref": "#/$defs/Review" },
 
-        "readingStatus": { "enum": ["want", "reading", "read", "dnf"], "description": "Extension" },
+        "readingStatus": { "enum": ["want", "reading", "read", "dnf", "not_interested"], "description": "Extension. not_interested: owned or known, but you don't plan to read it." },
         "owned": { "type": "boolean", "description": "Extension" },
         "dateAdded": { "$ref": "#/$defs/date", "description": "Extension" },
         "privateNotes": { "type": "string", "description": "Extension" },

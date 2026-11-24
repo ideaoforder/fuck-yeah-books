@@ -9,11 +9,14 @@ module Shelf
     one_to_many :borrows, class: "Shelf::Borrow", order: Sequel.desc(:borrowed_on)
 
     FORMATS  = %w[hardcover paperback ebook audiobook other].freeze
-    STATUSES = { "want" => "Want to read", "reading" => "Reading", "read" => "Read", "dnf" => "Did not finish" }.freeze
+    STATUSES = { "want" => "Want to read", "reading" => "Reading", "read" => "Read", "dnf" => "Did not finish",
+                 "not_interested" => "Not interested" }.freeze
     EDITABLE = %i[isbn13 title subtitle authors publisher published_year pages format cover_url
                   status owned rating review reviewed_on tags notes].freeze
 
-    STATUS_RANK = { "want" => 0, "reading" => 1, "dnf" => 2, "read" => 3 }.freeze
+    # Used when merging/importing: higher wins. "Not interested" ties with "want",
+    # so re-importing an old to-read shelf never overrides your choice.
+    STATUS_RANK = { "not_interested" => 0, "want" => 0, "reading" => 1, "dnf" => 2, "read" => 3 }.freeze
 
     # "The Hobbit: or There and Back Again" + "J. R. R. Tolkien" → "hobbit|tolkien"
     def self.match_key(title, authors)

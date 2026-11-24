@@ -10,7 +10,11 @@ module Shelf
         csv_rows.each do |row, line|
           shelf = col(row, "Exclusive Shelf").to_s
           read_on = date(col(row, "Date Read"))
-          status = SHELVES[shelf] || (shelf.match?(/dnf|did.?not|abandon/i) ? "dnf" : (read_on ? "read" : "want"))
+          status = SHELVES[shelf] ||
+                   if shelf.match?(/not.?interested|won.?t.?read|skip/i) then "not_interested"
+                   elsif shelf.match?(/dnf|did.?not|abandon/i) then "dnf"
+                   else read_on ? "read" : "want"
+                   end
           authors = [col(row, "Author"), *col(row, "Additional Authors").to_s.split(",")].compact.map(&:strip)
 
           reads = []

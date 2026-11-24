@@ -134,3 +134,12 @@ details.card[open] summary::before { content: "▾ "; }
 .inline-h { display: inline; margin: 0; }
 details.card form { margin-top: 1rem; }
 .tab-sep { width: 1px; background: var(--line); margin: .25rem .4rem; align-self: stretch; }
+.pill.not_interested { background: transparent; color: var(--muted); border: 1px dashed var(--line); }
+
+/* bulk edit */
+.bulkbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+  padding: .6rem .8rem; margin-bottom: .6rem; background: var(--card); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 4px 14px #0003; }
+.bulkbar[hidden], .bulkbar [hidden] { display: none; }
+table.selectable td.sel, table.selectable th.sel { width: 28px; padding-right: 0; }
+table.selectable tr.selected td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+table.selectable tr.head th { border-bottom: 1px solid var(--line); }

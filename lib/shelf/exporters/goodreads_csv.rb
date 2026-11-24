@@ -15,7 +15,8 @@ module Shelf
                  "Bookshelves with positions", "Exclusive Shelf", "My Review", "Spoiler", "Private Notes",
                  "Read Count", "Owned Copies"].freeze
 
-      SHELF = { "want" => "to-read", "reading" => "currently-reading", "read" => "read", "dnf" => "did-not-finish" }.freeze
+      SHELF = { "want" => "to-read", "reading" => "currently-reading", "read" => "read", "dnf" => "did-not-finish",
+                "not_interested" => "not-interested" }.freeze
       BINDING = { "hardcover" => "Hardcover", "paperback" => "Paperback", "ebook" => "ebook", "audiobook" => "Audiobook" }.freeze
 
       module_function

@@ -8,6 +8,7 @@ require_relative "lib/shelf/isbn"
 require_relative "lib/shelf/lookup"
 require_relative "lib/shelf/models"
 require_relative "lib/shelf/duplicates"
+require_relative "lib/shelf/bulk"
 require_relative "lib/shelf/importers/base"
 require_relative "lib/shelf/importers/goodreads"
 require_relative "lib/shelf/importers/storygraph"
@@ -65,7 +66,7 @@ module Shelf
       end
 
       def finish_button(book)
-        return "" if book.status == "read"
+        return "" if %w[read not_interested].include?(book.status)
         %(<form method="post" action="/books/#{book.id}/finish" class="inline finish" data-id="#{book.id}">) +
           %(<button class="small ghost" title="Mark read, finished today">✓ Read</button></form>)
       end
@@ -105,6 +106,7 @@ module Shelf
       @counts = Book.group_and_count(:status).to_h { [_1[:status], _1[:count]] }
       @counts["all"] = @counts.values.sum
       @counts["owned"] = Book.where(owned: true).count
+      @all_tags = Book.exclude(tags: nil).select_map(:tags).flat_map { _1.split(",").map(&:strip) }.reject(&:empty?).uniq.sort
       erb :index
     end
 
@@ -192,6 +194,19 @@ module Shelf
       book = Book[params["id"]] or halt 404
       content_type :json
       JSON.pretty_generate(Booklog.review(book))
+    end
+
+    post "/books/bulk" do
+      ids = Array(params["ids"])
+      if ids.empty?
+        flash!("Select some books first.")
+      else
+        flash!(Bulk.apply(ids, params["bulk_action"], params["value"]).to_s)
+      end
+      redirect back
+    rescue ArgumentError => e
+      flash!(e.message)
+      redirect back
     end
 
     # --- reads -----------------------------------------------------------
