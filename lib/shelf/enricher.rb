@@ -11,7 +11,10 @@ module Shelf
       # => { status: "created"|"exists"|"invalid", book:, message: }
       def add_by_isbn(code, status: nil, format: nil, owned: false)
         isbn = ISBN.from_scan(code)
-        return { status: "invalid", book: nil, message: "#{code.inspect} isn't a valid ISBN" } unless isbn
+        unless isbn
+          return { status: "invalid", book: nil, sticker: store_sticker?(code),
+                   message: store_sticker?(code) ? "Store sticker, not an ISBN" : "#{code.inspect} isn't a valid ISBN" }
+        end
 
         if (book = Book.first(isbn13: isbn))
           book.update(scanned_at: Time.now)
@@ -29,6 +32,13 @@ module Shelf
 
         msg = found ? "Added #{book.display_title}" : "Added ISBN #{isbn}. No metadata found yet (try Refresh later)"
         { status: "created", book: book, message: msg, found: found }
+      end
+
+      # Retailer price stickers (Borders' 24-digit BINC labels, etc.) encode
+      # an internal SKU, not the ISBN, so there's nothing to look up.
+      def store_sticker?(code)
+        d = code.to_s.gsub(/\D/, "")
+        d.length == 24 || (d.length > 13 && ![15, 18].include?(d.length))
       end
 
       # Add a pick from the typeahead (often an older book with no barcode).

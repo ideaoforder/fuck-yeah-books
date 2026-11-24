@@ -50,8 +50,14 @@
         by.textContent = data.book.authors ? ` ${data.book.authors}` : "";
         li.append(img, a, by);
       }
+      if (data.sticker) {
+        const a = document.createElement("a");
+        a.href = "/books/new";
+        a.textContent = "Search by title instead →";
+        li.append(document.createTextNode(`${code}: store price sticker (the ISBN isn't in it). Peel it, or `), a);
+      }
       const msg = document.createElement("small");
-      msg.textContent = { created: data.found ? "added" : "added, no metadata yet", exists: "already in library", merged: "merged with existing entry", invalid: data.message }[data.status];
+      msg.textContent = { created: data.found ? "added" : "added, no metadata yet", exists: "already in library", merged: "merged with existing entry", invalid: data.sticker ? "" : data.message }[data.status];
       li.append(msg);
     } catch (err) {
       li.className = "invalid";

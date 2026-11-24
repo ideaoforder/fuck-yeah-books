@@ -158,4 +158,11 @@ class AppTest < ShelfTest
     get "/books/#{w.id}"
     refute_includes last_response.body, %(class="stars")
   end
+  def test_borders_sticker_is_recognized
+    res = scan("001629995600110000000003")
+    assert_equal 422, last_response.status
+    assert_equal ["invalid", true, "Store sticker, not an ISBN"], res.values_at("status", "sticker", "message")
+    refute scan("12345")["sticker"], "short junk is just invalid"
+    refute scan("978044101359351699")["sticker"], "ISBN + price add-on still scans"
+  end
 end
