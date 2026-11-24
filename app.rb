@@ -2,6 +2,7 @@ require "sinatra/base"
 require "json"
 require "date"
 
+require_relative "lib/shelf/env"
 require_relative "lib/shelf/db"
 require_relative "lib/shelf/isbn"
 require_relative "lib/shelf/lookup"

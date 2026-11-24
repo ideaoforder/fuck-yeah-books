@@ -29,7 +29,7 @@ ISBN lookups try **Open Library** (books API, then its search index), then **Goo
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create or pick a project and enable **Books API**.
 2. Go to **Credentials** → **Create credentials** → **API key**. You can restrict the key to the Books API.
-3. Run with `GOOGLE_BOOKS_API_KEY=... bundle exec rackup -p 4567`, or export it in your shell profile.
+3. Put `GOOGLE_BOOKS_API_KEY=...` in a `.env` file in the project root (see `.env.example`; it is gitignored), or set it in your shell. Real environment variables win over `.env`.
 
 Books that no source knew about are saved as just their ISBN. Retry them from **Import / Export** → *Retry those*, or with `bin/enrich --missing`. Failed lookups are logged to stderr as `[lookup] ...`.
 
