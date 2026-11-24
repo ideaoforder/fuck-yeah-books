@@ -174,14 +174,31 @@ class AppTest < ShelfTest
     scan("9780441013593")
     assert rescanned.refresh.owned
 
-    get "/?status=owned"
+    get "/?owned=1"
     assert_includes last_response.body, "The Hobbit"
     assert_includes last_response.body, "Dune"
     refute_includes last_response.body, "Library copy"
-    assert_match(/Owned <small>2</, last_response.body)
-    unowned.update(owned: true)
-    get "/?status=owned&q=library"
+    assert_match(/All <small>2</, last_response.body, "tab counts follow the owned filter")
+
+    get "/?owned=0"
     assert_includes last_response.body, "Library copy"
+    refute_includes last_response.body, "Dune"
+
+    get "/?status=owned" # old links still work
+    refute_includes last_response.body, "Library copy"
+
+    # owned + status compose
+    get "/?owned=1&status=want"
+    assert_includes last_response.body, "Dune"
+    refute_includes last_response.body, "Library copy"
+    assert_includes last_response.body, %(href="/?status=read&amp;owned=1")
+    get "/?owned=1&status=read"
+    assert_includes last_response.body, "Nothing matches"
+
+    unowned.update(owned: true)
+    get "/?owned=1&q=library"
+    assert_includes last_response.body, "Library copy"
+    assert_match(/All <small>1</, last_response.body, "tab counts follow search too")
   end
 
   def test_unknown_status_filter_shows_all

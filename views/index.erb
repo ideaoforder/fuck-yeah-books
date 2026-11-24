@@ -1,13 +1,17 @@
 <form class="toolbar" method="get" action="/">
   <div class="tabs">
-    <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort')) %>" class="<%= 'on' unless @status %>">All <small><%= @counts['all'] %></small></a>
+    <a href="<%= h index_url(status: nil) %>" class="<%= 'on' unless @status %>">All <small><%= @counts['all'] %></small></a>
     <% Shelf::Book::STATUSES.each do |key, label| %>
-      <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort').merge('status' => key)) %>" class="<%= 'on' if @status == key %>"><%= label %> <small><%= @counts[key].to_i %></small></a>
+      <a href="<%= h index_url(status: key) %>" class="<%= 'on' if @status == key %>"><%= label %> <small><%= @counts[key].to_i %></small></a>
     <% end %>
-    <span class="tab-sep"></span>
-    <a href="/?<%= h Rack::Utils.build_query(params.slice('q', 'sort').merge('status' => 'owned')) %>" class="<%= 'on' if @status == 'owned' %>">Owned <small><%= @counts['owned'] %></small></a>
+    <span class="seg" role="group" aria-label="Owned filter">
+      <a href="<%= h index_url(owned: nil) %>" class="<%= 'on' unless @owned %>">Any</a>
+      <a href="<%= h index_url(owned: '1') %>" class="<%= 'on' if @owned == '1' %>">Owned</a>
+      <a href="<%= h index_url(owned: '0') %>" class="<%= 'on' if @owned == '0' %>">Not owned</a>
+    </span>
   </div>
   <input type="hidden" name="status" value="<%= h @status %>">
+  <input type="hidden" name="owned" value="<%= h @owned %>">
   <input type="search" name="q" value="<%= h params['q'] %>" placeholder="Search title, author, tag, ISBN">
   <select name="sort" onchange="this.form.submit()">
     <% { "added" => "Recently added", "read" => "Recently read", "title" => "Title", "author" => "Author", "rating" => "My rating" }.each do |k, v| %>
@@ -17,7 +21,11 @@
 </form>
 
 <% if @books.empty? %>
+  <% if @status || @owned || params["q"].to_s.strip != "" %>
+  <p class="empty">Nothing matches. <a href="/">Clear filters</a></p>
+  <% else %>
   <p class="empty">No books yet. <a href="/scan">Scan some</a>, <a href="/books/new">add one</a>, or <a href="/import">import your Goodreads / StoryGraph library</a>.</p>
+  <% end %>
 <% else %>
   <%# Checkboxes live in the table but belong to this form (form="bulk"), so
       the per-row forms (✓ Read) don't end up nested. %>

@@ -71,6 +71,13 @@ module Shelf
           %(<button class="small ghost" title="Mark read, finished today">✓ Read</button></form>)
       end
 
+      # Index URL keeping the current filters, with some overridden.
+      def index_url(**changes)
+        q = params.slice("q", "sort", "status", "owned").merge(changes.transform_keys(&:to_s)).reject { |_, v| v.nil? || v == "" }
+        q.delete("status") if q["status"] == "owned"
+        q.empty? ? "/" : "/?#{Rack::Utils.build_query(q)}"
+      end
+
       def book_params
         attrs = params.fetch("book", {}).slice(*Book::EDITABLE.map(&:to_s))
         attrs["owned"] = attrs.key?("owned") if params["book"]
@@ -81,17 +88,23 @@ module Shelf
     # --- library -------------------------------------------------------
 
     get "/" do
-      ds = Book.dataset
-      @status = params["status"]
-      if @status == "owned" then ds = ds.where(owned: true)
-      elsif Book::STATUSES.key?(@status) then ds = ds.where(status: @status)
-      else @status = nil
-      end
+      # Filters compose: search + owned narrow the set the tab counts are
+      # computed over; the status tab then picks within it.
+      base = Book.dataset
       if (q = params["q"].to_s.strip) != ""
         like = "%#{q}%"
-        ds = ds.where(Sequel.ilike(:title, like) | Sequel.ilike(:authors, like) | Sequel.ilike(:tags, like) |
-                      { isbn13: ISBN.normalize(q) || q })
+        base = base.where(Sequel.ilike(:title, like) | Sequel.ilike(:authors, like) | Sequel.ilike(:tags, like) |
+                          { isbn13: ISBN.normalize(q) || q })
       end
+      @owned = params["owned"]
+      @owned = "1" if params["status"] == "owned" # old links
+      @owned = nil unless %w[1 0].include?(@owned)
+      base = base.where(owned: @owned == "1") if @owned
+
+      @status = params["status"]
+      @status = nil unless Book::STATUSES.key?(@status)
+      ds = @status ? base.where(status: @status) : base
+
       last_read = DB[:reads].where(book_id: Sequel[:books][:id]).select { max(finished_on) }
       ds = ds.select_append(last_read.as(:last_read))
       @sort = params["sort"] || "added"
@@ -103,9 +116,8 @@ module Shelf
            else ds.order(Sequel.desc(:created_at), Sequel.desc(:id))
            end
       @books = ds.eager(:borrows).all
-      @counts = Book.group_and_count(:status).to_h { [_1[:status], _1[:count]] }
+      @counts = base.unordered.group_and_count(:status).to_h { [_1[:status], _1[:count]] }
       @counts["all"] = @counts.values.sum
-      @counts["owned"] = Book.where(owned: true).count
       @all_tags = Book.exclude(tags: nil).select_map(:tags).flat_map { _1.split(",").map(&:strip) }.reject(&:empty?).uniq.sort
       erb :index
     end

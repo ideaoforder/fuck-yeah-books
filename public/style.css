@@ -133,7 +133,6 @@ details.card summary::before { content: "▸ "; color: var(--muted); }
 details.card[open] summary::before { content: "▾ "; }
 .inline-h { display: inline; margin: 0; }
 details.card form { margin-top: 1rem; }
-.tab-sep { width: 1px; background: var(--line); margin: .25rem .4rem; align-self: stretch; }
 .pill.not_interested { background: transparent; color: var(--muted); border: 1px dashed var(--line); }
 
 /* bulk edit */
@@ -143,3 +142,5 @@ details.card form { margin-top: 1rem; }
 table.selectable td.sel, table.selectable th.sel { width: 28px; padding-right: 0; }
 table.selectable tr.selected td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 table.selectable tr.head th { border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; margin-left: auto; border: 1px solid var(--line); border-radius: 99px; padding: 2px; }
+.seg a { padding: .2rem .7rem !important; }
