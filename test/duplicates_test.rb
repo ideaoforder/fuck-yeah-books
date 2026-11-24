@@ -66,14 +66,53 @@ class DuplicatesTest < ShelfTest
     assert_equal ["read", 3.5], [keep.status, keep.rating]
   end
 
-  def test_scanning_another_edition_merges_into_existing
-    hobbit = Book.create(title: "The Hobbit", authors: "J.R.R. Tolkien", status: "read", rating: 4.5,
-                         openlibrary_work: "OL262758W")
-    res = Enricher.add_by_isbn("9780547928227") # FAKE_OL: same work
-    assert_equal "exists", res[:status]
-    assert_equal hobbit.id, res[:book].id
+  def test_scanned_edition_is_canonical
+    old = Book.create(title: "Hobbit", authors: "Tolkien", status: "read", rating: 4.5, review: "Second breakfast.",
+                      isbn13: "9780261103344", format: "hardcover", openlibrary_work: "OL262758W", tags: "fantasy")
+    old.add_read(finished_on: Date.new(2020, 1, 1))
+    old.add_borrow(borrowed_by: "Sam", borrowed_on: Date.new(2025, 1, 1))
+
+    res = Enricher.add_by_isbn("9780547928227", owned: true) # FAKE_OL: same work, paperback
+    assert_equal "merged", res[:status]
     assert_equal 1, Book.count
-    assert_equal ["9780547928227", 4.5, "paperback"], hobbit.refresh.values.values_at(:isbn13, :rating, :format)
+    b = res[:book].refresh
+    refute_equal old.id, b.id
+    # edition details come from the scan…
+    assert_equal ["9780547928227", "The Hobbit", "paperback", "Mariner", 300, true],
+                 b.values.values_at(:isbn13, :title, :format, :publisher, :pages, :owned)
+    # …your data comes from the old entry
+    assert_equal ["read", 4.5, "Second breakfast.", "fantasy"], b.values.values_at(:status, :rating, :review, :tags)
+    assert_equal [Date.new(2020, 1, 1)], b.reads.map(&:finished_on)
+    assert_equal ["Sam"], b.borrows.map(&:borrowed_by)
+    assert b.scanned_at
+  end
+
+  def test_rescanning_marks_existing_as_scanned
+    b = Book.create(title: "Dune", isbn13: "9780441013593")
+    assert_equal "exists", Enricher.add_by_isbn("9780441013593")[:status]
+    assert b.refresh.scanned_at
+  end
+
+  def test_scanned_copy_is_suggested_keeper
+    rich = Book.create(title: "Dune", authors: "Frank Herbert", status: "read", rating: 5.0, review: "Spice.")
+    scanned = Book.create(title: "Dune", authors: "Frank Herbert", scanned_at: Time.now - 60)
+    newer = Book.create(title: "Dune", authors: "Frank Herbert", scanned_at: Time.now)
+    assert_equal newer, Duplicates.groups.first.suggested_keeper
+    assert_equal scanned, Duplicates.preferred_keeper([rich, scanned])
+    assert_equal rich, Duplicates.preferred_keeper([rich, Book.create(title: "Dune", authors: "F. Herbert")])
+
+    get "/books/#{rich.id}"
+    assert_includes last_response.body, "Merge this into that one (scanned copy)"
+  end
+
+  def test_mark_scanned_script
+    Book.create(title: "Old", isbn13: "9780441013593", created_at: Time.local(2026, 11, 1))
+    today = Book.create(title: "Scanned", isbn13: "9780547928227", created_at: Time.local(2026, 11, 24, 15))
+    Book.create(title: "No ISBN", created_at: Time.local(2026, 11, 24, 15))
+    load_script = -> { ARGV.replace(["2026-11-24"]); load File.join(Shelf::ROOT, "bin/mark-scanned") }
+    capture_io { load_script.() }
+    assert_equal ["Scanned"], Book.exclude(scanned_at: nil).select_map(:title)
+    assert_equal today.refresh.created_at.to_i, today.scanned_at.to_i
   end
 
   def test_import_matches_on_goodreads_id

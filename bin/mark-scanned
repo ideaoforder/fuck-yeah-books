@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+# Mark books as scanned (canonical edition for duplicate merging).
+# Useful for books scanned before scanned_at was tracked.
+#   bin/mark-scanned 2026-11-24          # books added on/after this date
+#   bin/mark-scanned 2026-11-24 --dry-run
+require_relative "../app"
+
+since = ARGV.find { _1.match?(/\A\d{4}-\d{2}-\d{2}\z/) } or abort "usage: bin/mark-scanned YYYY-MM-DD [--dry-run]"
+y, m, d = since.split("-").map(&:to_i)
+scope = Shelf::Book.where(scanned_at: nil).where { created_at >= Time.local(y, m, d) }.exclude(isbn13: nil)
+
+scope.order(:created_at).each { |b| puts "#{b.created_at.strftime('%F %R')}  #{b.isbn13}  #{b.display_title}" }
+if ARGV.include?("--dry-run")
+  puts "#{scope.count} books would be marked scanned."
+else
+  n = scope.update(Sequel[:scanned_at] => Sequel[:created_at])
+  puts "Marked #{n} books as scanned."
+end

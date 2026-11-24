@@ -5,12 +5,18 @@ module Shelf
   # editions of the same work count as duplicates.
   module Duplicates
     Group = Struct.new(:books, :reasons) do
-      # The copy with the most of *your* data is the default keeper.
-      def suggested_keeper
-        books.max_by do |b|
-          [b.reads.size + (b.rating ? 2 : 0) + (b.review.to_s.strip.empty? ? 0 : 2) +
-             (b.isbn13 ? 1 : 0) + (b.cover_url ? 1 : 0), -b.id]
-        end
+      def suggested_keeper = Duplicates.preferred_keeper(books)
+    end
+
+    # A scanned copy is the edition you physically own, so it's canonical
+    # (most recent scan if several). Otherwise, the copy with the most of
+    # *your* data.
+    def self.preferred_keeper(books)
+      scanned = books.select(&:scanned_at)
+      return scanned.max_by { [_1.scanned_at, _1.id] } if scanned.any?
+      books.max_by do |b|
+        [b.reads.size + (b.rating ? 2 : 0) + (b.review.to_s.strip.empty? ? 0 : 2) +
+           (b.isbn13 ? 1 : 0) + (b.cover_url ? 1 : 0), -b.id]
       end
     end
 
@@ -21,7 +27,7 @@ module Shelf
 
     MERGE_FILL = %i[isbn13 isbn10 title subtitle authors publisher published_year pages format cover_url
                     rating reviewed_on openlibrary_id openlibrary_work goodreads_id storygraph_id
-                    gr_avg_rating ol_avg_rating ol_rating_count looked_up_at].freeze
+                    gr_avg_rating ol_avg_rating ol_rating_count looked_up_at scanned_at].freeze
 
     module_function
 

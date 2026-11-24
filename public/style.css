@@ -95,7 +95,7 @@ ul.plain li { padding: .3rem 0; border-bottom: 1px dashed var(--line); }
 .scans li img { width: 30px; height: 45px; object-fit: cover; border-radius: 2px; }
 .scans li small { margin-left: auto; color: var(--muted); }
 .scans li.created { border-left: 4px solid var(--up); }
-.scans li.exists { border-left: 4px solid #c48a1c; }
+.scans li.exists, .scans li.merged { border-left: 4px solid #c48a1c; }
 .scans li.invalid { border-left: 4px solid var(--down); }
 .scans li.pending { opacity: .6; }
 

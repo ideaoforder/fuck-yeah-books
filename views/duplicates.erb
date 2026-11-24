@@ -2,7 +2,7 @@
 <% if @groups.empty? %>
   <p class="empty">No duplicates found.</p>
 <% else %>
-  <p class="muted"><%= @groups.size %> <%= @groups.size == 1 ? "group" : "groups" %>. Pick the copy to keep and merge. Nothing is lost: blank fields are filled from the other copies, reviews and notes are combined, tags are merged, reads and loans move over, and the most-finished status wins.</p>
+  <p class="muted"><%= @groups.size %> <%= @groups.size == 1 ? "group" : "groups" %>. Pick the copy to keep and merge. Scanned copies are preselected, since that's the edition you own. Nothing is lost: blank fields are filled from the other copies, reviews and notes are combined, tags are merged, reads and loans move over, and the most-finished status wins.</p>
 
   <% @groups.each do |g| %>
     <% keeper = g.suggested_keeper %>
@@ -16,7 +16,7 @@
                 <input type="hidden" name="ids[]" value="<%= b.id %>"></td>
             <td class="c"><%= cover(b, "M", "thumb") %></td>
             <td><a class="title" href="/books/<%= b.id %>"><%= h b.display_title %></a>
-                <div class="muted"><%= h b.author_list.join(", ") %><%= " · #{b.published_year}" if b.published_year %><%= " · #{h b.publisher}" if b.publisher %></div></td>
+                <div class="muted"><%= "📷 scanned · " if b.scanned_at %><%= h b.author_list.join(", ") %><%= " · #{b.published_year}" if b.published_year %><%= " · #{h b.publisher}" if b.publisher %></div></td>
             <td class="muted"><%= b.isbn13 || "—" %></td>
             <td class="muted"><%= h b.format %></td>
             <td><%= status_pill(b) %></td>

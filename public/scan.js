@@ -51,7 +51,7 @@
         li.append(img, a, by);
       }
       const msg = document.createElement("small");
-      msg.textContent = { created: data.found ? "added" : "added, no metadata yet", exists: "already in library", invalid: data.message }[data.status];
+      msg.textContent = { created: data.found ? "added" : "added, no metadata yet", exists: "already in library", merged: "merged with existing entry", invalid: data.message }[data.status];
       li.append(msg);
     } catch (err) {
       li.className = "invalid";

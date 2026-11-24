@@ -14,19 +14,28 @@ module Shelf
         return { status: "invalid", book: nil, message: "#{code.inspect} isn't a valid ISBN" } unless isbn
 
         if (book = Book.first(isbn13: isbn))
+          book.update(scanned_at: Time.now)
           return { status: "exists", book: book, message: "Already in your library: #{book.display_title}" }
         end
 
         book = Book.create(isbn13: isbn, status: Book::STATUSES.key?(status) ? status : "want",
-                           format: Book::FORMATS.include?(format) ? format : nil, owned: !!owned)
+                           format: Book::FORMATS.include?(format) ? format : nil, owned: !!owned,
+                           scanned_at: Time.now)
         found = book.enrich!
 
-        # Another edition of something already on the shelf: fold this
-        # scan into it (one copy per book) rather than adding a second.
-        if found && (existing = Duplicates.match_for(book))
-          Duplicates.merge!(existing, [book])
-          return { status: "exists", book: existing,
-                   message: "Already in your library (another edition): #{existing.display_title}" }
+        # Another edition of something already on the shelf. The scanned copy
+        # is canonical: it keeps its edition details and absorbs your rating,
+        # review, reads, loans and tags from the old entry.
+        if found
+          merged = []
+          while (existing = Duplicates.match_for(book))
+            merged << existing.display_title
+            Duplicates.merge!(book, [existing])
+          end
+          if merged.any?
+            return { status: "merged", book: book, found: true,
+                     message: "Merged with your existing entry for #{merged.first}" }
+          end
         end
 
         msg = found ? "Added #{book.display_title}" : "Added ISBN #{isbn}. No metadata found yet (try Refresh later)"

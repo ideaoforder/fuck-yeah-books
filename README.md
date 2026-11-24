@@ -12,7 +12,7 @@ A small, local book tracker: no Amazon, no bad UX. Sinatra + SQLite, about 1,600
 - **Export**: Booklog JSON (lossless) or Goodreads-format CSV (imports anywhere).
 - **Compare**: your rating vs. the Goodreads average (captured at import) and the Open Library average (fetched live).
 - **Lending**: who has it, since when, and when it came back. The "Lent out" page lists what's out.
-- **Duplicates**: finds copies that share an ISBN, Open Library work, Goodreads ID, or title + author (one copy per book is assumed, so other editions count). Merge keeps everything: blanks filled, reviews/notes combined, reads and loans moved. Scanning another edition of a book you already have merges into it.
+- **Duplicates**: finds copies that share an ISBN, Open Library work, Goodreads ID, or title + author (one copy per book is assumed, so other editions count). Merge keeps everything: blanks filled, reviews/notes combined, reads and loans moved. Scanning (or typing an ISBN on Add) marks a book as the copy you own, so it is always the canonical edition: scanning another edition of a book you have merges the old entry into the scanned one. `bin/mark-scanned YYYY-MM-DD` backfills books scanned before this was tracked.
 
 ## Run it
 
