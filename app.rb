@@ -65,6 +65,15 @@ module Shelf
         %(<span class="pill #{book.status}" data-status-for="#{book.id}">#{Book::STATUSES[book.status]}</span>)
       end
 
+      def unread_button(book)
+        return "" unless book.rateable?
+        today = book.reads.any? { _1.finished_on == Date.today }
+        warn = [("your #{format('%g', book.rating)}★ rating" if book.rating), ("the read logged today" if today)].compact
+        confirm = warn.empty? ? "" : %( onsubmit="return confirm('Mark unread? This removes #{warn.join(' and ')}.')")
+        %(<form method="post" action="/books/#{book.id}/unread" class="inline"#{confirm}>) +
+          %(<button class="small ghost" title="Back to Want to read">↺ Unread</button></form>)
+      end
+
       def finish_button(book)
         return "" if %w[read not_interested].include?(book.status)
         %(<form method="post" action="/books/#{book.id}/finish" class="inline finish" data-id="#{book.id}">) +
@@ -158,13 +167,29 @@ module Shelf
 
     patch "/books/:id" do
       @book = Book[params["id"]] or halt 404
+      old_rating = @book.rating
       @book.set_fields(book_params, Book::EDITABLE.map(&:to_s), missing: :skip)
+      # Moving a rated book off read/DNF clears the rating, unless you also
+      # typed a new rating (then the validation error explains the conflict).
+      cleared = false
+      if !@book.rateable? && @book.rating && @book.rating == old_rating
+        @book.rating = nil
+        cleared = true
+      end
       if @book.valid?
         @book.save_changes
+        flash!("Cleared your rating, since it's no longer marked read.") if cleared
         redirect "/books/#{@book.id}"
       else
         erb :edit
       end
+    end
+
+    post "/books/:id/unread" do
+      book = Book[params["id"]] or halt 404
+      book.unread!(params["status"] == "reading" ? "reading" : "want")
+      flash!("Marked unread.")
+      redirect "/books/#{book.id}"
     end
 
     delete "/books/:id" do

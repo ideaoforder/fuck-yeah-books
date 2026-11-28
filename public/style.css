@@ -144,3 +144,4 @@ table.selectable tr.selected td { background: color-mix(in srgb, var(--accent) 1
 table.selectable tr.head th { border-bottom: 1px solid var(--line); }
 .seg { display: inline-flex; margin-left: auto; border: 1px solid var(--line); border-radius: 99px; padding: 2px; }
 .seg a { padding: .2rem .7rem !important; }
+.statusline { margin: 0 0 1rem; display: flex; gap: .35rem; align-items: center; flex-wrap: wrap; }

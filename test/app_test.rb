@@ -103,13 +103,6 @@ class AppTest < ShelfTest
     assert_equal [4.25, 0, Date.today], [b.refresh.rating, b.reads.size, b.reviewed_on]
   end
 
-  def test_edit_form_rejects_rating_on_unread_book
-    b = Shelf::Book.create(title: "X", status: "read", rating: 3.0)
-    patch "/books/#{b.id}", book: { status: "want", rating: "3" }
-    assert_includes last_response.body, "books you&#39;ve read"
-    assert_equal "read", b.refresh.status
-  end
-
   def test_import_promotes_rated_to_read_books
     csv = File.read(File.join(FIXTURES, "goodreads_library_export.csv")).sub(",0,4.34,Scholastic", ",4,4.34,Scholastic")
     r = Shelf::Enricher.import(csv)
@@ -205,5 +198,37 @@ class AppTest < ShelfTest
     Shelf::Book.create(title: "Anything")
     get "/?status=bogus"
     assert_includes last_response.body, "Anything"
+  end
+
+  def test_mark_unread_undoes_read
+    b = Shelf::Book.create(title: "Oops", status: "want")
+    b.add_read(finished_on: Date.new(2019, 1, 1))
+    post "/books/#{b.id}/finish"                      # accidental ✓ Read
+    patch "/books/#{b.id}/rating", rating: "3.5"
+    b.refresh
+    assert_equal ["read", 3.5, 2], [b.status, b.rating, b.reads.size]
+
+    get "/books/#{b.id}"
+    assert_includes last_response.body, "↺ Unread"
+    assert_includes last_response.body, "removes your 3.5★ rating and the read logged today"
+
+    post "/books/#{b.id}/unread"
+    b.refresh
+    assert_equal ["want", nil, [Date.new(2019, 1, 1)]], [b.status, b.rating, b.reads.map(&:finished_on)]
+    get "/books/#{b.id}"
+    refute_includes last_response.body, "↺ Unread"
+  end
+
+  def test_edit_status_off_read_clears_rating
+    b = Shelf::Book.create(title: "Rated", status: "read", rating: 4.0, review: "Kept.")
+    patch "/books/#{b.id}", book: { title: "Rated", status: "want", rating: "4.0", review: "Kept." }
+    assert last_response.redirect?, last_response.body[0, 300]
+    follow_redirect!
+    assert_includes last_response.body, "Cleared your rating"
+    assert_equal ["want", nil, "Kept."], [b.refresh.status, b.rating, b.review]
+
+    # typing a *new* rating on an unread book is still an error
+    patch "/books/#{b.id}", book: { status: "want", rating: "2" }
+    assert_includes last_response.body, "books you&#39;ve read"
   end
 end

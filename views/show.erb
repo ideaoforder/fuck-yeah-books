@@ -15,11 +15,12 @@
     <h1><%= h b.display_title %></h1>
     <% if b.subtitle %><p class="sub"><%= h b.subtitle %></p><% end %>
     <p class="by"><%= h b.author_list.join(", ") %></p>
-    <p>
-      <%= status_pill(b) %> <%= finish_button(b) %>
+    <%# div, not p: a <form> inside a <p> closes it and breaks the line %>
+    <div class="statusline">
+      <%= status_pill(b) %> <%= finish_button(b) %> <%= unread_button(b) %>
       <% if b.owned %><span class="pill">owned</span><% end %>
       <% b.tag_list.each do |t| %><a class="pill tag" href="/?q=<%= h t %>"><%= h t %></a><% end %>
-    </p>
+    </div>
     <dl class="meta">
       <% [["Format", b.format], ["ISBN", b.isbn13], ["Publisher", b.publisher], ["Published", b.published_year],
           ["Pages", b.pages], ["Added", b.added_on && fmt_date(b.added_on)]].each do |k, v| next unless v %>

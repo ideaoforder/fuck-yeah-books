@@ -111,6 +111,20 @@ module Shelf
       save_changes
     end
 
+    # Undo "read": back to want (or reading), drop the rating (ratings are for
+    # read books), and remove a read finished today (an accidental ✓ Read).
+    # Older reads and the review text are kept.
+    def unread!(new_status = "want")
+      raise ArgumentError, "#{new_status} isn't an unread status" if RATEABLE.include?(new_status)
+      DB.transaction do
+        reads_dataset.where(finished_on: Date.today).delete
+        self.rating = nil
+        self.status = new_status
+        save_changes
+      end
+      refresh
+    end
+
     # Record a finished read (or start one) and bump status accordingly.
     def log_read!(started_on: nil, finished_on: nil)
       add_read(started_on: started_on, finished_on: finished_on)
